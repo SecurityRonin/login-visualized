@@ -699,7 +699,7 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
     <h2 style="color:#ff8c00;margin-bottom:.5rem;margin-top:1rem">3. Salt + Pepper</h2>
     <p>Password + salt + server-secret pepper → SHA-256. Requires attacker to breach both database AND app server simultaneously.</p>
     <h2 style="color:#a371f7;margin-bottom:.5rem;margin-top:1rem">4. Argon2id (recommended)</h2>
-    <p>Memory-hard KDF (64 MB RAM, 0.5 s per hash). GPU farms that crack SHA-256 billions of times per second are reduced to ~2 attempts per second. Brute-force becomes economically infeasible.</p>
+    <p>Memory-hard KDF (≥ 64 MiB RAM per hash, configurable). GPU farms that crack SHA-256 at billions per second are reduced to ~2 Argon2id attempts per second. Brute-force becomes economically infeasible at that rate.</p>
     <p style="margin-top:1.5rem;color:#8b949e">Enable JavaScript to explore each step interactively.</p>
   </div>
 </noscript>
@@ -973,7 +973,7 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
       <div class="quiz-q-text">3. Why does Argon2id make offline cracking so expensive?</div>
       <div class="quiz-options">
         <label><input type="radio" name="q3" value="a"> It encrypts the hash with a secret key</label>
-        <label><input type="radio" name="q3" value="b"> It requires gigabytes of RAM and seconds of CPU per attempt, making GPU farms ineffective</label>
+        <label><input type="radio" name="q3" value="b"> Each attempt consumes a configurable amount of RAM (≥ 64 MiB) and CPU time, making GPU-parallel cracking economically infeasible</label>
         <label><input type="radio" name="q3" value="c"> It stores the hash across multiple servers</label>
       </div>
     </div>
@@ -1060,7 +1060,7 @@ const STEPS = {
       ]},
 
     { tag:'register', title:'Hash Stored — Password Discarded',
-      desc:'Only the hash goes into the database. The original password is thrown away. Even the engineers who built the system cannot read what you typed.',
+      desc:'Only the hash goes into the database. The original password is thrown away. The database contains only the hash — it cannot be reversed to recover the plaintext directly. (Note: a system administrator could still verify a guess offline by hashing it and comparing.)',
       nodes:{ user:'', server:'active', db:'db-active' },
       us:{}, sd:{ dir:'right', msg:'hash only' },
       chips:['hash'],
@@ -1179,7 +1179,7 @@ const STEPS = {
       ]},
 
     { tag:'attack', title:'Rainbow Table: Upgraded Firepower',
-      desc:'Salt prevents simultaneous cracks. But there is a second, more powerful attack: the <strong>rainbow table</strong> — a precomputed dictionary of billions of hash→password mappings. SHA-256 is so fast (billions of hashes per second on a GPU) that every common password was computed and indexed years ago. Even without simultaneous exposure, a single hash lookup finds the answer in under a second.',
+      desc:'Salt prevents simultaneous cracks. But a second threat remains: SHA-256 runs at <strong>~10 billion hashes per second</strong> on a consumer GPU. An attacker can brute-force common passwords in seconds. Precomputed lookup tables (rainbow tables) exist for unsalted SHA-256 and make it even faster. The root problem is speed — SHA-256 was designed to be fast, which is exactly wrong for password storage.',
       nodes:{ user:'', server:'', db:'breach' },
       us:{}, sd:{},
       chips:['breach'],
@@ -1188,16 +1188,16 @@ const STEPS = {
       formula:[
         {k:'hash', lbl:'stolen', v:'ef92b778bafe7712…'},
         {k:'op', v:'→'},
-        {k:'fn', v:'rainbow table'},
+        {k:'fn', v:'GPU brute-force'},
         {k:'op', v:'→'},
         {k:'breach', lbl:'cracked!', v:'"password123"'},
       ],
       computation:[
         { lbl:'Stolen:',  val:'ef92b778bafe7712…',                       cls:'breach' },
-        { lbl:'Method:',  val:'rainbow table — precomputed hash→password dictionary', cls:'breach' },
+        { lbl:'Method:',  val:'GPU brute-force + dictionary (precomputed tables also exist)', cls:'breach' },
         { lbl:'Why fast:',val:'SHA-256: ~10 billion hashes/sec on GPU',  cls:'' },
-        { lbl:'Lookup:',  val:'ef92b778… → "password123"',               cls:'breach' },
-        { lbl:'Time:',    val:'< 1 second',                               cls:'breach' },
+        { lbl:'Result:',  val:'ef92b778… → "password123"',               cls:'breach' },
+        { lbl:'Time:',    val:'seconds for common passwords',             cls:'breach' },
       ],
       db:[
         { username:'alice',   hash:'ef92b778bafe7712…', populated:true, breach:true, massCrack:true },
@@ -1210,8 +1210,8 @@ const STEPS = {
         { lbl:'charlie',               pct:100, cls:'instant', time:'< 1 second' },
       ],
       attack:{ level:'fail',
-        text:'🔓 Rainbow table attack succeeds instantly. Salt defeats rainbow tables because each unique hash would require its own precomputed table — computationally infeasible. But salt alone is not enough: if SHA-256 is still used, per-user brute force becomes the fallback. See Scenario 4 for why speed itself must be the target.' },
-      thinkWhy:'Rainbow tables exist for SHA-256, MD5, SHA-1, and every other fast hash. The only defences: salt (defeats precomputed tables) and a slow hash (defeats per-user brute force). Which of these does your system use?',
+        text:'🔓 SHA-256 is too fast for password storage. An attacker with the database can try billions of guesses per second. Precomputed lookup tables (rainbow tables) make it even faster for unsalted hashes. Salt eliminates precomputed tables but does not slow down per-user brute force — that requires a different tool. See Scenario 4.' },
+      thinkWhy:'Salt defeats precomputed tables. A slow hash defeats brute force. You need both. Which of these does your system use?',
       refs:[
         { label:'OWASP: Salting defeats rainbow tables', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#salting' },
         { label:'OWASP: Upgrading Legacy Hashes', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#upgrading-legacy-hashes' },
@@ -1580,8 +1580,8 @@ const STEPS = {
         { lbl:'Without pepper', pct:0, cls:'blocked', time:'blocked ∞' },
         { lbl:'Need: DB breach', pct:0, cls:'blocked', time:'+ app server' },
       ],
-      attack:{ level:'success',
-        text:'🔒 Database alone is not enough. The attacker cannot reproduce the hash without the pepper. They must breach a second, separate system — the secrets vault or HSM — to extract the pepper and begin cracking. Two breaches required instead of one.' },
+      attack:{ level:'partial',
+        text:'⚠️ Database alone is not enough — the attacker cannot reproduce the hash without the pepper. However: many real breaches give attackers access to both the database AND the application server simultaneously. If the pepper is in the same environment (a config file, a non-isolated secrets vault), it too is compromised. Pepper raises the cost of attack; it does not eliminate it. Pair with Argon2id for layered defence.' },
       thinkWhy:'Your organisation\'s database and secrets vault are probably in the same cloud account. If an attacker has the database, how hard is it to also reach the vault?',
       refs:[
         { label:'OWASP: Peppering', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#peppering' },
@@ -1591,7 +1591,7 @@ const STEPS = {
 
   argon2: [
     { tag:'register', title:'User Registers',
-      desc:'Same starting point — user submits a password. But now the server will use Argon2id instead of SHA-256. Argon2id is <strong>memory-hard</strong>: it requires gigabytes of RAM per hash attempt, making GPU-based cracking economically unfeasible.',
+      desc:'Same starting point — user submits a password. But now the server will use Argon2id instead of SHA-256. Argon2id is <strong>memory-hard</strong>: each hash attempt consumes a configurable amount of RAM (OWASP recommends ≥ 64 MiB) and CPU time. Unlike SHA-256, every parameter can be tuned upward as hardware improves.',
       nodes:{ user:'active', server:'', db:'' },
       us:{ dir:'right', msg:'"password123"' }, sd:{},
       chips:['password'],
@@ -1929,7 +1929,8 @@ function render() {
   const cbEl = document.getElementById('crackBarSection');
   if (s.attack) {
     asEl.style.display = 'block';
-    aaEl.innerHTML = '<div class="attack-outcome ' + s.attack.level + '">' + s.attack.text + '</div>';
+    aaEl.innerHTML = '<div class="attack-outcome ' + s.attack.level + '">' + s.attack.text + '</div>' +
+      '<p style="font-size:10px;color:#484f58;margin-top:6px;font-style:italic">⚙ Attack timings are illustrative. Actual results depend on hardware, password complexity, and attacker resources.</p>';
     if (s.crackBar && s.crackBar.length) {
       cbEl.style.display = 'block';
       cbEl.innerHTML = '<div class="crack-bar-wrap"><div class="crack-bar-title">Cracking difficulty</div>' +

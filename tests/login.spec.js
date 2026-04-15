@@ -330,11 +330,11 @@ test('salted scenario attack shows .partial outcome', async ({ page }) => {
   await expect(page.locator('.attack-outcome.partial')).toBeVisible();
 });
 
-test('peppered scenario attack shows .success (defender wins)', async ({ page }) => {
+test('peppered scenario attack shows .partial (DB-only breach blocked, but combined breach possible)', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-scenario="peppered"]');
   for (let i = 0; i < 6; i++) await page.click('#btnNext');
-  await expect(page.locator('.attack-outcome.success')).toBeVisible();
+  await expect(page.locator('.attack-outcome.partial')).toBeVisible();
 });
 
 // ── Think why ─────────────────────────────────────────────────────────────────
