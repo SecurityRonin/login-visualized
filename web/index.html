@@ -315,6 +315,55 @@ body {
 .formula-op  { color:#8b949e; font-size:13px; font-weight:700; flex-shrink:0; padding:0 1px; }
 .formula-fn  { background:#21262d; border:1px solid #30363d; border-radius:4px; padding:3px 8px; color:#c9d1d9; font-size:10px; white-space:nowrap; flex-shrink:0; }
 
+/* ── Live hash ──────────────────────────────────────────────────────────────── */
+.live-hash-wrap { margin-top:8px; padding:10px 12px; background:#0d1117; border:1px solid #30363d; border-radius:6px; }
+.live-hash-label { font-size:10px; color:#8b949e; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; }
+.live-hash-input { width:100%; background:#161b22; border:1px solid #30363d; border-radius:4px; color:#c9d1d9; font-family:inherit; font-size:12px; padding:5px 8px; outline:none; box-sizing:border-box; }
+.live-hash-input:focus { border-color:#58a6ff; }
+.live-hash-out-row { display:flex; gap:8px; align-items:baseline; margin-top:6px; font-size:11px; flex-wrap:wrap; }
+
+/* ── Crack time bar ─────────────────────────────────────────────────────────── */
+.crack-bar-wrap { margin-top:10px; }
+.crack-bar-title { font-size:10px; color:#8b949e; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+.crack-bar-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:10px; }
+.crack-bar-lbl { min-width:90px; color:#8b949e; flex-shrink:0; }
+.crack-bar-track { flex:1; height:7px; background:#21262d; border-radius:4px; overflow:hidden; }
+.crack-bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
+.crack-bar-fill.instant { background:#f85149; }
+.crack-bar-fill.fast    { background:#d29922; }
+.crack-bar-fill.slow    { background:#3fb950; }
+.crack-bar-fill.blocked { background:#21262d; border:1px dashed #484f58; }
+.crack-bar-time { min-width:70px; color:#8b949e; text-align:right; white-space:nowrap; font-size:10px; }
+
+/* ── Mass-crack rows ─────────────────────────────────────────────────────────── */
+.db-table tr.mass-crack { background:#1a0d0d; }
+.db-table tr.mass-crack td.hash-val { color:#f85149; }
+.db-table .same-hash-badge { font-size:8px; color:#f85149; opacity:0.75; margin-left:3px; vertical-align:middle; }
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(4px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes slideRight {
+  0%   { left:0;                  opacity:1; }
+  100% { left:calc(100% - 6px);   opacity:0.15; }
+}
+@keyframes slideLeft {
+  0%   { left:calc(100% - 6px);   opacity:1; }
+  100% { left:0;                  opacity:0.15; }
+}
+.formula-row { animation:fadeInUp 0.2s ease; }
+#stepText    { animation:fadeInUp 0.2s ease; }
+.arrow-line { position:relative; overflow:visible; }
+.arrow-line.active-right::after,
+.arrow-line.active-left::after {
+  content:''; position:absolute; top:-3px;
+  width:6px; height:6px; border-radius:50%;
+}
+.arrow-line.active-right::after { background:#58a6ff; animation:slideRight 1.2s ease-in-out infinite; }
+.arrow-line.active-left::after  { background:#3fb950; animation:slideLeft  1.2s ease-in-out infinite; }
+
 /* DB table */
 .db-table {
   width: 100%; border-collapse: collapse; font-size: 10px;
@@ -525,6 +574,16 @@ body {
     <div class="detail-section">
       <div class="detail-section-title">Server Computation</div>
       <div id="computationRows"></div>
+      <div id="liveHashSection" style="display:none">
+        <div class="live-hash-wrap">
+          <div class="live-hash-label">Try it — type any password</div>
+          <input type="text" id="liveHashInput" class="live-hash-input" placeholder="type a password…" autocomplete="off" spellcheck="false">
+          <div class="live-hash-out-row">
+            <span class="comp-lbl" id="liveHashLbl">SHA-256:</span>
+            <span class="comp-val hash" id="liveHashOut">—</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="detail-section">
       <div class="detail-section-title">Database Contents</div>
@@ -533,6 +592,7 @@ body {
     <div class="detail-section" id="attackSection" style="display:none">
       <div class="detail-section-title">Attack Outcome</div>
       <div id="attackAnalysis"></div>
+      <div id="crackBarSection" style="display:none"></div>
     </div>
     <div class="refs-section" id="refsSection" style="display:none">
       <div class="detail-section-title">OWASP References</div>
@@ -602,6 +662,7 @@ const STEPS = {
         {k:'op', v:'→'},
         {k:'hash', lbl:'hash', v:'ef92b778bafe7712…'},
       ],
+      liveHash:{ prefix:'', salt:'' },
       computation:[
         { lbl:'Input:',   val:'"password123"',        cls:'password' },
         { lbl:'SHA-256:', val:'ef92b778bafe7712…',    cls:'hash' },
@@ -628,7 +689,11 @@ const STEPS = {
         { lbl:'Stored:',   val:'ef92b778bafe7712…', cls:'hash' },
         { lbl:'Password:', val:'discarded ✓',        cls:'match' },
       ],
-      db:[{ username:'alice', hash:'ef92b778bafe7712…', populated:true }] },
+      db:[
+        { username:'alice',   hash:'ef92b778bafe7712…', populated:true },
+        { username:'bob',     hash:'ef92b778bafe7712…', populated:true },
+        { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true },
+      ]},
 
     { tag:'login', title:'User Logs In',
       desc:'User submits their password to sign in. The server receives it — but has no stored password to compare against. Only a hash is on file.',
@@ -645,7 +710,11 @@ const STEPS = {
         { lbl:'On file:',  val:'ef92b778bafe7712…',   cls:'hash' },
         { lbl:'Plan:',     val:'re-hash and compare',  cls:'' },
       ],
-      db:[{ username:'alice', hash:'ef92b778bafe7712…', populated:true }] },
+      db:[
+        { username:'alice',   hash:'ef92b778bafe7712…', populated:true, highlight:true },
+        { username:'bob',     hash:'ef92b778bafe7712…', populated:true },
+        { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true },
+      ]},
 
     { tag:'login', title:'Server Verifies',
       desc:'The server hashes the submitted password and compares it to the stored hash. If they match, the user is who they claim to be.',
@@ -668,7 +737,11 @@ const STEPS = {
         { lbl:'Stored:',   val:'ef92b778bafe7712…',                  cls:'hash' },
         { lbl:'Match:',    val:'✓ Identical',                        cls:'match' },
       ],
-      db:[{ username:'alice', hash:'ef92b778bafe7712…', populated:true, highlight:true }],
+      db:[
+        { username:'alice',   hash:'ef92b778bafe7712…', populated:true, highlight:true },
+        { username:'bob',     hash:'ef92b778bafe7712…', populated:true },
+        { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true },
+      ],
       success:'Hashes match → access granted.' },
 
     { tag:'login', title:'Access Granted',
@@ -682,10 +755,14 @@ const STEPS = {
       computation:[
         { lbl:'Result:', val:'Authenticated ✓', cls:'match' },
       ],
-      db:[{ username:'alice', hash:'ef92b778bafe7712…', populated:true }] },
+      db:[
+        { username:'alice',   hash:'ef92b778bafe7712…', populated:true },
+        { username:'bob',     hash:'ef92b778bafe7712…', populated:true },
+        { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true },
+      ]},
 
     { tag:'attack', title:'Database Stolen',
-      desc:'An attacker breaches the database and downloads every row. They now have username and hash for every account. They open CrackStation.',
+      desc:'An attacker breaches the database and downloads every row. Alice and Bob used the same password — they have <strong style="color:#f85149">identical hashes</strong>. One rainbow table lookup cracks both accounts simultaneously.',
       nodes:{ user:'', server:'', db:'breach' },
       us:{}, sd:{},
       chips:['breach'],
@@ -702,9 +779,18 @@ const STEPS = {
         { lbl:'Tool:',    val:'rainbow table — precomputed lookup',      cls:'breach' },
         { lbl:'Lookup:',  val:'ef92b778… → "password123"',              cls:'breach' },
         { lbl:'Time:',    val:'< 1 second',                              cls:'breach' },
-        { lbl:'Scope:',   val:'every account with "password123" cracks simultaneously', cls:'breach' },
+        { lbl:'Scope:',   val:'alice + bob cracked by one lookup — simultaneously', cls:'breach' },
       ],
-      db:[{ username:'alice', hash:'ef92b778bafe7712…', populated:true, breach:true }],
+      db:[
+        { username:'alice',   hash:'ef92b778bafe7712…', populated:true, breach:true, massCrack:true },
+        { username:'bob',     hash:'ef92b778bafe7712…', populated:true, breach:true, massCrack:true },
+        { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true, breach:true },
+      ],
+      crackBar:[
+        { lbl:'Rainbow table', pct:100, cls:'instant', time:'< 1 second' },
+        { lbl:'alice + bob',   pct:100, cls:'instant', time:'1 lookup — both' },
+        { lbl:'charlie',       pct:100, cls:'instant', time:'< 1 second' },
+      ],
       attack:{ level:'fail',
         text:'🔓 Rainbow table attack succeeds instantly. Because no salt was added, the same password always produces the same hash. One lookup cracks every account that shares that password — simultaneously.' },
       thinkWhy:'If 3,000 of your users chose "password123", a single database breach exposes all 3,000 at once. Does your current system prevent this?',
@@ -745,6 +831,7 @@ const STEPS = {
         {k:'op', v:'→'},
         {k:'hash', lbl:'hash', v:'a1b2c3d4e5f6a7b8…'},
       ],
+      liveHash:{ prefix:'x7Qm9p', salt:'x7Qm9p' },
       computation:[
         { lbl:'Password:', val:'"password123"',                  cls:'password' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (random, per-user)',  cls:'salt' },
@@ -758,7 +845,7 @@ const STEPS = {
       ]},
 
     { tag:'register', title:'Hash + Salt Stored',
-      desc:'Both the hash and the salt are stored. The salt is not a secret — it is stored in plain text next to the hash. Its only job is to make every hash unique.',
+      desc:'Both the hash and the salt are stored. The salt is not a secret — it is stored in plain text next to the hash. Its only job is to make every hash unique. Notice: Bob used the same password as Alice — but gets a different salt, so a completely different hash.',
       nodes:{ user:'', server:'active', db:'db-active' },
       us:{}, sd:{ dir:'right', msg:'hash + salt' },
       chips:['hash','salt'],
@@ -772,7 +859,11 @@ const STEPS = {
         { lbl:'Salt:',  val:'"x7Qm9p"',           cls:'salt' },
         { lbl:'Note:',  val:'salt stored openly — it is not a secret', cls:'' },
       ],
-      db:[{ username:'alice', hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true }] },
+      db:[
+        { username:'alice',   hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true },
+        { username:'bob',     hash:'f9e2d1c0b8a7f6e5…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'2c4e6a8b0d2f4e6a…', salt:'p5T2wQ', populated:true },
+      ]},
 
     { tag:'login', title:'User Logs In',
       desc:'User submits their password. The server fetches the stored salt for this specific user from the database — it needs the same salt to re-create the hash.',
@@ -790,7 +881,11 @@ const STEPS = {
         { lbl:'Received:', val:'"password123"',           cls:'password' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (from DB)',    cls:'salt' },
       ],
-      db:[{ username:'alice', hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true, highlight:true }] },
+      db:[
+        { username:'alice',   hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true, highlight:true },
+        { username:'bob',     hash:'f9e2d1c0b8a7f6e5…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'2c4e6a8b0d2f4e6a…', salt:'p5T2wQ', populated:true },
+      ]},
 
     { tag:'login', title:'Server Verifies',
       desc:'Server re-runs the same calculation: SHA-256(stored salt + submitted password). If the result matches the stored hash, authentication succeeds.',
@@ -816,7 +911,11 @@ const STEPS = {
         { lbl:'Stored:',  val:'a1b2c3d4e5f6a7b8…',         cls:'hash' },
         { lbl:'Match:',   val:'✓ Identical',                cls:'match' },
       ],
-      db:[{ username:'alice', hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true }],
+      db:[
+        { username:'alice',   hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true, highlight:true },
+        { username:'bob',     hash:'f9e2d1c0b8a7f6e5…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'2c4e6a8b0d2f4e6a…', salt:'p5T2wQ', populated:true },
+      ],
       success:'Hashes match → access granted.' },
 
     { tag:'login', title:'Access Granted',
@@ -830,10 +929,14 @@ const STEPS = {
       computation:[
         { lbl:'Result:', val:'Authenticated ✓', cls:'match' },
       ],
-      db:[{ username:'alice', hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true }] },
+      db:[
+        { username:'alice',   hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true },
+        { username:'bob',     hash:'f9e2d1c0b8a7f6e5…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'2c4e6a8b0d2f4e6a…', salt:'p5T2wQ', populated:true },
+      ]},
 
     { tag:'attack', title:'Database Stolen',
-      desc:'Attacker downloads the database. They have hash + salt for every user. The rainbow table is now useless — it was built for unsalted hashes, not "x7Qm9p" + password.',
+      desc:'Attacker downloads the database. They have hash + salt for every user. The rainbow table is now useless — it was built for unsalted hashes. Notice: Alice and Bob used the same password, but have <strong style="color:#a371f7">completely different hashes</strong> — the attacker cannot tell.',
       nodes:{ user:'', server:'', db:'breach' },
       us:{}, sd:{},
       chips:['breach'],
@@ -855,7 +958,16 @@ const STEPS = {
         { lbl:'Weak pwd:', val:'"password123" falls in seconds',     cls:'breach' },
         { lbl:'Strong pwd:',val:'20-char passphrase survives',       cls:'match' },
       ],
-      db:[{ username:'alice', hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true, breach:true }],
+      db:[
+        { username:'alice',   hash:'a1b2c3d4e5f6a7b8…', salt:'x7Qm9p', populated:true, breach:true },
+        { username:'bob',     hash:'f9e2d1c0b8a7f6e5…', salt:'m3K8nR', populated:true, breach:true },
+        { username:'charlie', hash:'2c4e6a8b0d2f4e6a…', salt:'p5T2wQ', populated:true, breach:true },
+      ],
+      crackBar:[
+        { lbl:'Rainbow table', pct:0,  cls:'blocked', time:'✗ useless' },
+        { lbl:'Weak password', pct:75, cls:'fast',    time:'~seconds' },
+        { lbl:'Strong password',pct:2, cls:'slow',    time:'centuries' },
+      ],
       attack:{ level:'partial',
         text:'⚠️ Rainbow tables fail — salt makes mass cracking impossible. But SHA-256 is a fast hash: 5 billion guesses per second on a GPU. Weak passwords still fall. Salt raises the cost; it does not make weak passwords safe.' },
       thinkWhy:'Salt stops the attacker cracking all users at once. If they target only one executive account with a GPU farm, how long does "Password1!" survive?',
@@ -902,6 +1014,7 @@ const STEPS = {
         {k:'op', v:'→'},
         {k:'hash', lbl:'hash', v:'9f8e7d6c5b4a3f2e…'},
       ],
+      liveHash:{ prefix:'[pepper]x7Qm9p', salt:'x7Qm9p' },
       computation:[
         { lbl:'Pepper:',   val:'(secrets vault / HSM)',           cls:'pepper' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (random, per-user)',   cls:'salt' },
@@ -933,7 +1046,11 @@ const STEPS = {
         { lbl:'Formula:',   val:'SHA-256(pepper + salt + password)',        cls:'' },
         { lbl:'Caveat:',    val:'pepper compromise = force-reset all users', cls:'' },
       ],
-      db:[{ username:'alice', hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true }],
+      db:[
+        { username:'alice',   hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true },
+        { username:'bob',     hash:'1a3c5e7f9b0d2f4a…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'8b6d4f2e0c8a6b4d…', salt:'p5T2wQ', populated:true },
+      ],
       refs:[
         { label:'OWASP: Peppering — common requirements', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#common-requirements-for-peppering-strategies' },
         { label:'OWASP: Secrets Management Cheat Sheet', url:'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html' },
@@ -956,7 +1073,11 @@ const STEPS = {
         { lbl:'Salt:',     val:'"x7Qm9p"  (from DB)',   cls:'salt' },
         { lbl:'Pepper:',   val:'(from secrets vault)',    cls:'pepper' },
       ],
-      db:[{ username:'alice', hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true, highlight:true }] },
+      db:[
+        { username:'alice',   hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true, highlight:true },
+        { username:'bob',     hash:'1a3c5e7f9b0d2f4a…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'8b6d4f2e0c8a6b4d…', salt:'p5T2wQ', populated:true },
+      ]},
 
     { tag:'login', title:'Server Verifies',
       desc:'Server re-runs: SHA-256(pepper + stored salt + submitted password). If the result matches the stored hash, access granted.',
@@ -984,7 +1105,11 @@ const STEPS = {
         { lbl:'Stored:',  val:'9f8e7d6c5b4a3f2e…',                  cls:'hash' },
         { lbl:'Match:',   val:'✓ Identical',                        cls:'match' },
       ],
-      db:[{ username:'alice', hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true }],
+      db:[
+        { username:'alice',   hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true, highlight:true },
+        { username:'bob',     hash:'1a3c5e7f9b0d2f4a…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'8b6d4f2e0c8a6b4d…', salt:'p5T2wQ', populated:true },
+      ],
       success:'Hashes match → access granted.' },
 
     { tag:'login', title:'Access Granted',
@@ -998,7 +1123,11 @@ const STEPS = {
       computation:[
         { lbl:'Result:', val:'Authenticated ✓', cls:'match' },
       ],
-      db:[{ username:'alice', hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true }] },
+      db:[
+        { username:'alice',   hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true },
+        { username:'bob',     hash:'1a3c5e7f9b0d2f4a…', salt:'m3K8nR', populated:true },
+        { username:'charlie', hash:'8b6d4f2e0c8a6b4d…', salt:'p5T2wQ', populated:true },
+      ]},
 
     { tag:'attack', title:'Database Stolen — Missing Piece',
       desc:'Attacker downloads the database. They have hash and salt for every user. But the pepper is missing — it was never stored in the database. They cannot compute the hash without it.',
@@ -1022,7 +1151,15 @@ const STEPS = {
         { lbl:'Result:',  val:'cannot compute — missing input',      cls:'breach' },
         { lbl:'To crack:', val:'must also breach the app server',    cls:'' },
       ],
-      db:[{ username:'alice', hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true, breach:true }],
+      db:[
+        { username:'alice',   hash:'9f8e7d6c5b4a3f2e…', salt:'x7Qm9p', populated:true, breach:true },
+        { username:'bob',     hash:'1a3c5e7f9b0d2f4a…', salt:'m3K8nR', populated:true, breach:true },
+        { username:'charlie', hash:'8b6d4f2e0c8a6b4d…', salt:'p5T2wQ', populated:true, breach:true },
+      ],
+      crackBar:[
+        { lbl:'Without pepper', pct:0, cls:'blocked', time:'blocked ∞' },
+        { lbl:'Need: DB breach', pct:0, cls:'blocked', time:'+ app server' },
+      ],
       attack:{ level:'success',
         text:'🔒 Database alone is not enough. The attacker cannot reproduce the hash without the pepper. They must breach a second, separate system — the secrets vault or HSM — to extract the pepper and begin cracking. Two breaches required instead of one.' },
       thinkWhy:'Your organisation\'s database and secrets vault are probably in the same cloud account. If an attacker has the database, how hard is it to also reach the vault?',
@@ -1131,12 +1268,16 @@ function render() {
       (hasSalt ? '<th>salt</th>' : '') +
       '</tr></thead><tbody>';
     s.db.forEach(row => {
-      const tr = row.highlight ? ' class="highlight"' : '';
+      const trCls = [
+        row.highlight ? 'highlight' : '',
+        row.massCrack ? 'mass-crack' : '',
+      ].filter(Boolean).join(' ');
       const hcls = row.breach ? 'breach' : 'hash-val';
       const scls = row.breach ? 'breach' : 'salt-val';
-      h += '<tr' + tr + '>';
+      h += '<tr' + (trCls ? ' class="' + trCls + '"' : '') + '>';
       h += '<td class="val">' + row.username + '</td>';
-      h += '<td class="' + hcls + '">' + row.hash + '</td>';
+      h += '<td class="' + hcls + '">' + row.hash +
+        (row.massCrack ? '<span class="same-hash-badge">↑same</span>' : '') + '</td>';
       if (hasSalt) h += '<td class="' + scls + '">' + (row.salt || '—') + '</td>';
       h += '</tr>';
     });
@@ -1144,14 +1285,46 @@ function render() {
     dbEl.innerHTML = h;
   }
 
+  // Live hash input show/hide
+  const lhSection = document.getElementById('liveHashSection');
+  const lhInput   = document.getElementById('liveHashInput');
+  const lhLbl     = document.getElementById('liveHashLbl');
+  if (s.liveHash) {
+    lhSection.style.display = 'block';
+    lhInput.value = '';
+    document.getElementById('liveHashOut').textContent = '—';
+    if (s.liveHash.prefix) {
+      lhLbl.textContent = 'SHA-256("' + s.liveHash.salt + '" + input):';
+    } else {
+      lhLbl.textContent = 'SHA-256:';
+    }
+  } else {
+    lhSection.style.display = 'none';
+  }
+
   // Attack section
   const asEl = document.getElementById('attackSection');
   const aaEl = document.getElementById('attackAnalysis');
+  const cbEl = document.getElementById('crackBarSection');
   if (s.attack) {
     asEl.style.display = 'block';
     aaEl.innerHTML = '<div class="attack-outcome ' + s.attack.level + '">' + s.attack.text + '</div>';
+    if (s.crackBar && s.crackBar.length) {
+      cbEl.style.display = 'block';
+      cbEl.innerHTML = '<div class="crack-bar-wrap"><div class="crack-bar-title">Cracking difficulty</div>' +
+        s.crackBar.map(b =>
+          '<div class="crack-bar-row">' +
+          '<span class="crack-bar-lbl">' + b.lbl + '</span>' +
+          '<div class="crack-bar-track"><div class="crack-bar-fill ' + b.cls + '" style="width:' + b.pct + '%"></div></div>' +
+          '<span class="crack-bar-time">' + b.time + '</span>' +
+          '</div>'
+        ).join('') + '</div>';
+    } else {
+      cbEl.style.display = 'none';
+    }
   } else {
     asEl.style.display = 'none';
+    cbEl.style.display = 'none';
   }
 
   // OWASP refs
@@ -1171,6 +1344,20 @@ function render() {
   document.getElementById('btnPrev').disabled = state.step === 0;
   document.getElementById('btnNext').disabled = state.step === 6;
 }
+
+// ── Live hash ─────────────────────────────────────────────────────────────────
+async function hashPassword(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0,16) + '…';
+}
+document.getElementById('liveHashInput').addEventListener('input', async function() {
+  const s = STEPS[state.scenario][state.step];
+  if (!s.liveHash) return;
+  const val = this.value;
+  if (!val) { document.getElementById('liveHashOut').textContent = '—'; return; }
+  const input = s.liveHash.prefix + val;
+  document.getElementById('liveHashOut').textContent = await hashPassword(input);
+});
 
 // ── Navigation ─────────────────────────────────────────────────────────────────
 function selectStep(n) { state.step = n; render(); }

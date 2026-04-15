@@ -328,6 +328,89 @@ test('attacker row visible on attack step', async ({ page }) => {
   await expect(page.locator('#attackerRow')).toHaveClass(/visible/);
 });
 
+// ── Multi-user DB ─────────────────────────────────────────────────────────────
+test('DB shows 3 users after store step (plain)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  await expect(page.locator('.db-table tbody tr')).toHaveCount(3);
+});
+
+test('DB shows 3 users after store step (salted)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="2"]');
+  await expect(page.locator('.db-table tbody tr')).toHaveCount(3);
+});
+
+test('plain DB: alice and bob share the same hash', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  const hashes = await page.locator('.db-table td.hash-val').allTextContents();
+  expect(hashes[0]).toBe(hashes[1]); // alice === bob
+  expect(hashes[0]).not.toBe(hashes[2]); // charlie differs
+});
+
+test('salted DB: alice and bob have different hashes despite same password', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="2"]');
+  const hashes = await page.locator('.db-table td.hash-val').allTextContents();
+  expect(hashes[0]).not.toBe(hashes[1]); // alice ≠ bob despite same password
+});
+
+test('plain attack: mass-crack rows visible', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('.db-table tr.mass-crack')).toHaveCount(2);
+});
+
+// ── Live hash input ────────────────────────────────────────────────────────────
+test('live hash input visible on step 2 (hash step)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('#liveHashInput')).toBeVisible();
+});
+
+test('live hash input hidden on non-hash steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#liveHashSection')).toBeHidden();
+});
+
+test('typing in live hash input updates output', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="1"]');
+  await page.fill('#liveHashInput', 'hello');
+  await page.waitForTimeout(300);
+  const val = await page.locator('#liveHashOut').textContent();
+  expect(val).not.toBe('—');
+  expect(val).toMatch(/[0-9a-f]{8}/);
+});
+
+// ── Cracking time bar ─────────────────────────────────────────────────────────
+test('crack bar visible on attack step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#crackBarSection')).toBeVisible();
+});
+
+test('crack bar hidden on non-attack steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#crackBarSection')).toBeHidden();
+});
+
+test('plain crack bar shows instant difficulty', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#crackBarSection')).toContainText('< 1 second');
+});
+
+test('peppered crack bar shows blocked', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#crackBarSection')).toContainText('blocked');
+});
+
 // ── All scenarios × all steps smoke test ─────────────────────────────────────
 for (const scenario of ['plain', 'salted', 'peppered']) {
   test(`all 7 steps render without error — ${scenario}`, async ({ page }) => {
