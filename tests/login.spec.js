@@ -3,12 +3,12 @@ import { test, expect } from '@playwright/test';
 // ── Page loads ──────────────────────────────────────────────────────────────
 test('page loads with title', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.app-title')).toContainText('Login Security');
+  await expect(page.locator('h1')).toContainText('Login Security');
 });
 
 test('shows subtitle', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.app-subtitle')).not.toBeEmpty();
+  await expect(page.locator('header + header')).not.toBeEmpty();
 });
 
 // ── Scenario selector ────────────────────────────────────────────────────────
