@@ -697,7 +697,7 @@ test('refs section visible and contains link when step has refs', async ({ page 
   await page.goto('/');
   await page.click('[data-step="1"]');
   await expect(page.locator('#refsSection')).not.toHaveCSS('display', 'none');
-  await expect(page.locator('#refsList .ref-link')).toBeVisible();
+  await expect(page.locator('#refsList .ref-link').first()).toBeVisible();
 });
 
 // ── Coverage: compare grid DB content ────────────────────────────────────────
