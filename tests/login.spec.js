@@ -443,9 +443,9 @@ test('crack bar hidden on non-attack steps', async ({ page }) => {
   await expect(page.locator('#crackBarSection')).toBeHidden();
 });
 
-test('plain crack bar shows instant difficulty', async ({ page }) => {
+test('plain crack bar shows instant difficulty (rainbow table step)', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-step="6"]');
+  await page.click('[data-step="7"]');
   await expect(page.locator('#crackBarSection')).toContainText('< 1 second');
 });
 
@@ -456,8 +456,61 @@ test('peppered crack bar shows blocked', async ({ page }) => {
   await expect(page.locator('#crackBarSection')).toContainText('blocked');
 });
 
+// ── Cmd/Ctrl modifier keys bypass single-key shortcuts ───────────────────────
+test('Cmd+C does not toggle compare panel', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Meta+c');
+  await expect(page.locator('#comparePanel')).toBeHidden();
+});
+
+test('Ctrl+C does not toggle compare panel', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Control+c');
+  await expect(page.locator('#comparePanel')).toBeHidden();
+});
+
+// ── Plain scenario has 8 steps (attack split into two) ───────────────────────
+test('plain scenario step counter shows 8 steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#stepCounter')).toContainText('of 8');
+});
+
+test('non-plain scenarios still have 7 steps', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await expect(page.locator('#stepCounter')).toContainText('of 7');
+});
+
+test('plain step 6 describes the simultaneous exposure problem and salt', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  const text = await page.locator('#stepText').textContent();
+  expect(text.toLowerCase()).toMatch(/simultaneous|salt/);
+});
+
+test('plain step 7 describes rainbow table attack', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await expect(page.locator('#stepText')).toContainText(/rainbow/i);
+});
+
+test('plain step 7 crack bar shows < 1 second', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await expect(page.locator('#crackBarSection')).toContainText('< 1 second');
+});
+
+test('all 8 plain steps render without error', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 8; i++) {
+    await page.click(`[data-step="${i}"]`);
+    await expect(page.locator('#stepText')).not.toBeEmpty();
+    await expect(page.locator('#computationRows')).not.toBeEmpty();
+  }
+});
+
 // ── All scenarios × all steps smoke test ─────────────────────────────────────
-for (const scenario of ['plain', 'salted', 'peppered']) {
+for (const scenario of ['salted', 'peppered']) {
   test(`all 7 steps render without error — ${scenario}`, async ({ page }) => {
     await page.goto('/');
     await page.click(`[data-scenario="${scenario}"]`);
