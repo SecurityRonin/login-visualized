@@ -1,5 +1,50 @@
 import { test, expect } from '@playwright/test';
 
+// ── SEO & meta ───────────────────────────────────────────────────────────────
+test('page has meta description', async ({ page }) => {
+  await page.goto('/');
+  const content = await page.locator('meta[name="description"]').getAttribute('content');
+  expect(content).toBeTruthy();
+  expect(content.length).toBeGreaterThan(20);
+});
+
+test('page has og:title', async ({ page }) => {
+  await page.goto('/');
+  const content = await page.locator('meta[property="og:title"]').getAttribute('content');
+  expect(content).toBeTruthy();
+});
+
+test('page has og:description', async ({ page }) => {
+  await page.goto('/');
+  const content = await page.locator('meta[property="og:description"]').getAttribute('content');
+  expect(content).toBeTruthy();
+});
+
+test('page has canonical link', async ({ page }) => {
+  await page.goto('/');
+  const href = await page.locator('link[rel="canonical"]').getAttribute('href');
+  expect(href).toBeTruthy();
+  expect(href).toContain('login-visualized');
+});
+
+// ── Security headers ─────────────────────────────────────────────────────────
+test('response has X-Frame-Options header', async ({ page }) => {
+  const response = await page.goto('/');
+  expect(response.headers()['x-frame-options']).toBe('DENY');
+});
+
+test('response has X-Content-Type-Options header', async ({ page }) => {
+  const response = await page.goto('/');
+  expect(response.headers()['x-content-type-options']).toBe('nosniff');
+});
+
+test('response has Content-Security-Policy header', async ({ page }) => {
+  const response = await page.goto('/');
+  const csp = response.headers()['content-security-policy'];
+  expect(csp).toBeTruthy();
+  expect(csp).toContain("frame-ancestors 'none'");
+});
+
 // ── Page loads ──────────────────────────────────────────────────────────────
 test('page loads with title', async ({ page }) => {
   await page.goto('/');
@@ -570,3 +615,111 @@ test('clicking print button calls window.print', async ({ page }) => {
   await page.click('#btnPrint');
   await expect.poll(() => printCalled).toBe(true);
 });
+
+// ── Coverage: stepTag ─────────────────────────────────────────────────────────
+test('step tag shows REGISTER on registration steps', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  await expect(page.locator('#stepTag')).toContainText('REGISTER');
+});
+
+test('step tag shows LOGIN on login steps', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="3"]');
+  await expect(page.locator('#stepTag')).toContainText('LOGIN');
+});
+
+test('step tag shows ATTACK on attack step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#stepTag')).toContainText('ATTACK');
+});
+
+// ── Coverage: thinkWhy block ──────────────────────────────────────────────────
+test('thinkWhy block is hidden when step has no thinkWhy', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  await expect(page.locator('#thinkWhy')).not.toHaveClass(/visible/);
+});
+
+test('thinkWhy block is visible when step has thinkWhy', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#thinkWhy')).toHaveClass(/visible/);
+});
+
+test('thinkWhy block content changes between scenarios', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  const plain = await page.locator('#thinkWhy').textContent();
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="6"]');
+  const peppered = await page.locator('#thinkWhy').textContent();
+  expect(plain).not.toEqual(peppered);
+});
+
+// ── Coverage: success box ─────────────────────────────────────────────────────
+test('success box is hidden on non-login steps', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  await expect(page.locator('#successBox')).not.toHaveClass(/visible/);
+});
+
+test('success box is visible on login confirmed step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="4"]');
+  await expect(page.locator('#successBox')).toHaveClass(/visible/);
+});
+
+// ── Coverage: attacker row ────────────────────────────────────────────────────
+test('attacker row is hidden on non-attack steps', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  await expect(page.locator('#attackerRow')).not.toHaveClass(/visible/);
+});
+
+test('attacker row is visible on attack step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#attackerRow')).toHaveClass(/visible/);
+});
+
+// ── Coverage: OWASP refs section ──────────────────────────────────────────────
+test('refs section hidden when step has no refs', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  const display = await page.locator('#refsSection').evaluate(el => el.style.display);
+  expect(display).toBe('none');
+});
+
+test('refs section visible and contains link when step has refs', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('#refsSection')).not.toHaveCSS('display', 'none');
+  await expect(page.locator('#refsList .ref-link')).toBeVisible();
+});
+
+// ── Coverage: compare grid DB content ────────────────────────────────────────
+test('compare grid shows DB tables at step 3 (store step)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  await page.click('#btnCompare');
+  await expect(page.locator('#compareGrid')).toContainText('alice');
+});
+
+// ── Coverage: permalink argon2 deep-link ─────────────────────────────────────
+test('loading /#argon2/6 shows argon2 attack step', async ({ page }) => {
+  await page.goto('/#argon2/6');
+  await expect(page.locator('[data-scenario="argon2"]')).toHaveClass(/active/);
+  await expect(page.locator('#stepTag')).toContainText('ATTACK');
+});
+
+// ── Coverage: live hash hidden on non-liveHash step ──────────────────────────
+test('live hash section is hidden on steps without liveHash', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  const display = await page.locator('#liveHashSection').evaluate(el => el.style.display);
+  expect(display).toBe('none');
+});
+
