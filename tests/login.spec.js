@@ -1,0 +1,277 @@
+import { test, expect } from '@playwright/test';
+
+// ── Page loads ──────────────────────────────────────────────────────────────
+test('page loads with title', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.app-title')).toContainText('Login Security');
+});
+
+test('shows subtitle', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.app-subtitle')).not.toBeEmpty();
+});
+
+// ── Scenario selector ────────────────────────────────────────────────────────
+test('three scenario buttons present', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-scenario="plain"]')).toBeVisible();
+  await expect(page.locator('[data-scenario="salted"]')).toBeVisible();
+  await expect(page.locator('[data-scenario="peppered"]')).toBeVisible();
+});
+
+test('plain scenario active by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
+  await expect(page.locator('[data-scenario="salted"]')).not.toHaveClass(/active/);
+});
+
+test('switching scenario resets to step 1', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnNext');
+  await page.click('[data-scenario="salted"]');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+});
+
+// ── Wizard panel ─────────────────────────────────────────────────────────────
+test('seven wizard steps present', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.wizard-step')).toHaveCount(7);
+});
+
+test('first step active on load', async ({ page }) => {
+  await page.goto('/');
+  const first = page.locator('.wizard-step').first();
+  await expect(first).toHaveClass(/active/);
+});
+
+test('wizard step click navigates directly', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="4"]');
+  await expect(page.locator('#stepCounter')).toContainText('Step 5 of 7');
+  const step5 = page.locator('[data-step="4"]');
+  await expect(step5).toHaveClass(/active/);
+});
+
+test('attack step has attack styling when active', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('[data-step="6"]')).toHaveClass(/attack/);
+});
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+test('step counter shows 1 of 7 on load', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+});
+
+test('next button advances step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnNext');
+  await expect(page.locator('#stepCounter')).toContainText('Step 2 of 7');
+});
+
+test('prev button goes back', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnNext');
+  await page.click('#btnPrev');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+});
+
+test('prev button disabled on first step', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnPrev')).toBeDisabled();
+});
+
+test('next button disabled on last step', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('#btnNext')).toBeDisabled();
+});
+
+test('arrow key right advances step', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#stepCounter')).toContainText('Step 2 of 7');
+});
+
+test('arrow key left goes back', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+});
+
+test('keyboard 1/2/3 switches scenarios', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('2');
+  await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
+  await page.keyboard.press('3');
+  await expect(page.locator('[data-scenario="peppered"]')).toHaveClass(/active/);
+  await page.keyboard.press('1');
+  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
+});
+
+// ── Step content ─────────────────────────────────────────────────────────────
+test('step tag shows REGISTER on step 1', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#stepTag')).toContainText('REGISTER');
+});
+
+test('step text is not empty', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#stepText')).not.toBeEmpty();
+});
+
+test('attack step shows ATTACK tag', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('#stepTag')).toContainText('ATTACK');
+});
+
+test('login steps show LOGIN tag', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="3"]');
+  await expect(page.locator('#stepTag')).toContainText('LOGIN');
+});
+
+// ── Chips ────────────────────────────────────────────────────────────────────
+test('password chip appears on step 1', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#chips-0 .ws-chip-password')).toBeVisible();
+});
+
+test('salt chip appears in salted scenario step 2', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('#chips-1 .ws-chip-salt')).toBeVisible();
+});
+
+test('pepper chip appears in peppered scenario step 2', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('#chips-1 .ws-chip-pepper')).toBeVisible();
+});
+
+// ── DB panel ──────────────────────────────────────────────────────────────────
+test('database empty on steps 1-2 (plain)', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.db-empty')).toBeVisible();
+  await page.click('#btnNext');
+  await expect(page.locator('.db-empty')).toBeVisible();
+});
+
+test('database table appears after store step (plain)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  await expect(page.locator('.db-table')).toBeVisible();
+});
+
+test('salted scenario DB shows salt column', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="2"]');
+  await expect(page.locator('.db-table th')).toContainText(['username', 'hash', 'salt']);
+});
+
+test('plain scenario DB has no salt column', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  const headers = await page.locator('.db-table th').allTextContents();
+  expect(headers).not.toContain('salt');
+});
+
+// ── Computation panel ─────────────────────────────────────────────────────────
+test('computation panel shows content', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#computationRows')).not.toBeEmpty();
+});
+
+test('computation shows pepper in peppered scenario step 2', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('#computationRows')).toContainText('pepper');
+});
+
+// ── Attack outcomes ───────────────────────────────────────────────────────────
+test('attack section visible on step 7', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('#attackSection')).toBeVisible();
+});
+
+test('attack section hidden on non-attack steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#attackSection')).toBeHidden();
+});
+
+test('plain scenario attack shows .fail outcome', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('.attack-outcome.fail')).toBeVisible();
+});
+
+test('salted scenario attack shows .partial outcome', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('.attack-outcome.partial')).toBeVisible();
+});
+
+test('peppered scenario attack shows .success (defender wins)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('.attack-outcome.success')).toBeVisible();
+});
+
+// ── Think why ─────────────────────────────────────────────────────────────────
+test('think-why block visible on attack step', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('#thinkWhy')).toBeVisible();
+});
+
+test('think-why hidden on non-attack steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#thinkWhy')).toBeHidden();
+});
+
+// ── Success box ───────────────────────────────────────────────────────────────
+test('success box visible on login verify step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="4"]');
+  await expect(page.locator('#successBox')).toBeVisible();
+});
+
+test('success box hidden on non-verify steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#successBox')).toBeHidden();
+});
+
+// ── Attacker node ─────────────────────────────────────────────────────────────
+test('attacker row hidden on non-attack steps', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#attackerRow')).not.toHaveClass(/visible/);
+});
+
+test('attacker row visible on attack step', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  await expect(page.locator('#attackerRow')).toHaveClass(/visible/);
+});
+
+// ── All scenarios × all steps smoke test ─────────────────────────────────────
+for (const scenario of ['plain', 'salted', 'peppered']) {
+  test(`all 7 steps render without error — ${scenario}`, async ({ page }) => {
+    await page.goto('/');
+    await page.click(`[data-scenario="${scenario}"]`);
+    for (let i = 0; i < 7; i++) {
+      await page.click(`[data-step="${i}"]`);
+      await expect(page.locator('#stepText')).not.toBeEmpty();
+      await expect(page.locator('#computationRows')).not.toBeEmpty();
+    }
+  });
+}
