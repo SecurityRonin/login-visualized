@@ -53,7 +53,7 @@ body {
 /* ── Main Layout ───────────────────────────────────────────────────────────── */
 .app-main {
   display: grid;
-  grid-template-columns: 190px 1fr 290px;
+  grid-template-columns: 190px 1fr;
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -98,21 +98,37 @@ body {
 .ws-chip-match    { background: #0d2d0d; color: #3fb950; }
 .ws-chip-breach   { background: #2d0d0d; color: #f85149; }
 
-/* ── Diagram Panel (centre) ────────────────────────────────────────────────── */
-.diagram-panel {
+/* ── Main Panel (centre — full content column) ─────────────────────────────── */
+.main-panel {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  align-items: center;
 }
 .diagram-area {
-  flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 20px 28px;
-  gap: 18px;
-  min-height: 0;
+  padding: 16px 28px 14px;
+  gap: 14px;
+  border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
+}
+.main-body {
+  width: 100%;
+  max-width: 640px;
+  padding: 14px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.inline-section-title {
+  font-size: 10px; color: #8b949e;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 6px; padding-bottom: 4px;
+  border-bottom: 1px solid #21262d;
 }
 
 /* Nodes row */
@@ -270,22 +286,6 @@ body {
 .think-why.visible   { display: block; }
 .success-box.visible { display: block; }
 
-/* ── Detail Panel (right) ──────────────────────────────────────────────────── */
-.detail-panel {
-  background: #161b22;
-  border-left: 1px solid #30363d;
-  overflow-y: auto;
-  display: flex; flex-direction: column;
-}
-.detail-section {
-  padding: 12px 14px;
-  border-bottom: 1px solid #30363d;
-}
-.detail-section-title {
-  font-size: 10px; color: #8b949e;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 8px;
-}
 .comp-row {
   display: flex; gap: 8px; align-items: flex-start;
   font-size: 11px; margin-bottom: 5px;
@@ -416,7 +416,7 @@ body {
 .step-counter { font-size: 11px; color: #8b949e; padding: 0 4px; white-space: nowrap; }
 
 /* ── OWASP Refs ────────────────────────────────────────────────────────────── */
-.refs-section { padding: 10px 14px; border-bottom: 1px solid #30363d; }
+.refs-section { padding: 0; }
 .ref-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .ref-link {
   font-size: 10px; color: #8b949e;
@@ -513,40 +513,35 @@ body {
     </div>
   </div>
 
-  <!-- CENTRE: Diagram -->
-  <div class="diagram-panel">
-    <div class="diagram-area">
+  <!-- CENTRE: Main panel (diagram + scrollable content) -->
+  <div class="main-panel">
 
-      <!-- Nodes + arrows -->
+    <!-- Nodes + arrows — compact, sticky top -->
+    <div class="diagram-area">
       <div class="nodes-row" id="nodesRow">
         <div class="node" id="nodeUser">
           <div class="node-icon">👤</div>
           <div class="node-label">User</div>
         </div>
-
         <div class="arrow-segment" id="segUS">
           <div class="arrow-line" id="lineUS"></div>
           <div class="arrow-head right" id="headUS"></div>
           <div class="arrow-msg"  id="msgUS"></div>
         </div>
-
         <div class="node" id="nodeServer">
           <div class="node-icon">⚙️</div>
           <div class="node-label">Server</div>
         </div>
-
         <div class="arrow-segment" id="segSD">
           <div class="arrow-line" id="lineSD"></div>
           <div class="arrow-head right" id="headSD"></div>
           <div class="arrow-msg"  id="msgSD"></div>
         </div>
-
         <div class="node" id="nodeDb">
           <div class="node-icon">🗄️</div>
           <div class="node-label">Database</div>
         </div>
       </div>
-
       <!-- Attacker (appears on step 7) -->
       <div class="attacker-row" id="attackerRow">
         <div class="attacker-group" id="attackerGroup">
@@ -557,8 +552,12 @@ body {
           <div class="attacker-vline"></div>
         </div>
       </div>
+    </div>
 
-      <!-- Description -->
+    <!-- Scrollable body -->
+    <div class="main-body">
+
+      <!-- Step description -->
       <div class="step-description">
         <span class="step-tag" id="stepTag">REGISTER</span>
         <div id="stepText"></div>
@@ -566,37 +565,40 @@ body {
         <div class="success-box" id="successBox"></div>
       </div>
 
-    </div>
-  </div>
-
-  <!-- RIGHT: Detail panel -->
-  <div class="detail-panel">
-    <div class="detail-section">
-      <div class="detail-section-title">Server Computation</div>
-      <div id="computationRows"></div>
-      <div id="liveHashSection" style="display:none">
-        <div class="live-hash-wrap">
-          <div class="live-hash-label">Try it — type any password</div>
-          <input type="text" id="liveHashInput" class="live-hash-input" placeholder="type a password…" autocomplete="off" spellcheck="false">
-          <div class="live-hash-out-row">
-            <span class="comp-lbl" id="liveHashLbl">SHA-256:</span>
-            <span class="comp-val hash" id="liveHashOut">—</span>
+      <!-- Formula + computation + live hash -->
+      <div>
+        <div id="computationRows"></div>
+        <div id="liveHashSection" style="display:none">
+          <div class="live-hash-wrap">
+            <div class="live-hash-label">Try it — type any password</div>
+            <input type="text" id="liveHashInput" class="live-hash-input" placeholder="type a password…" autocomplete="off" spellcheck="false">
+            <div class="live-hash-out-row">
+              <span class="comp-lbl" id="liveHashLbl">SHA-256:</span>
+              <span class="comp-val hash" id="liveHashOut">—</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-section-title">Database Contents</div>
-      <div id="dbContents"></div>
-    </div>
-    <div class="detail-section" id="attackSection" style="display:none">
-      <div class="detail-section-title">Attack Outcome</div>
-      <div id="attackAnalysis"></div>
-      <div id="crackBarSection" style="display:none"></div>
-    </div>
-    <div class="refs-section" id="refsSection" style="display:none">
-      <div class="detail-section-title">OWASP References</div>
-      <div class="ref-list" id="refsList"></div>
+
+      <!-- Database -->
+      <div>
+        <div class="inline-section-title">Database</div>
+        <div id="dbContents"></div>
+      </div>
+
+      <!-- Attack outcome -->
+      <div id="attackSection" style="display:none">
+        <div class="inline-section-title">Attack Outcome</div>
+        <div id="attackAnalysis"></div>
+        <div id="crackBarSection" style="display:none"></div>
+      </div>
+
+      <!-- OWASP refs -->
+      <div class="refs-section" id="refsSection" style="display:none">
+        <div class="inline-section-title">OWASP References</div>
+        <div class="ref-list" id="refsList"></div>
+      </div>
+
     </div>
   </div>
 
