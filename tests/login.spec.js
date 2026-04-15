@@ -423,3 +423,150 @@ for (const scenario of ['plain', 'salted', 'peppered']) {
     }
   });
 }
+
+// ── Feature 1: Argon2id scenario ─────────────────────────────────────────────
+test('argon2 scenario button is present', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-scenario="argon2"]')).toBeVisible();
+});
+
+test('keyboard 4 switches to argon2 scenario', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('4');
+  await expect(page.locator('[data-scenario="argon2"]')).toHaveClass(/active/);
+});
+
+test('argon2 scenario shows Argon2id in computation', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await expect(page.locator('#computationRows')).toContainText('Argon2id');
+});
+
+test('argon2 attack step crack bar shows centuries', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#crackBarSection')).toContainText('centuries');
+});
+
+test('all 7 steps render without error — argon2', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  for (let i = 0; i < 7; i++) {
+    await page.click(`[data-step="${i}"]`);
+    await expect(page.locator('#stepText')).not.toBeEmpty();
+    await expect(page.locator('#computationRows')).not.toBeEmpty();
+  }
+});
+
+// ── Feature 2: Compare mode ───────────────────────────────────────────────────
+test('compare button is present', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnCompare')).toBeVisible();
+});
+
+test('compare panel is hidden by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#comparePanel')).toBeHidden();
+});
+
+test('clicking compare button shows compare panel', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#comparePanel')).toBeVisible();
+});
+
+test('compare panel shows all scenario labels', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#comparePanel')).toContainText('Plain');
+  await expect(page.locator('#comparePanel')).toContainText('Salted');
+  await expect(page.locator('#comparePanel')).toContainText('Peppered');
+  await expect(page.locator('#comparePanel')).toContainText('Argon2id');
+});
+
+test('keyboard c toggles compare panel', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('c');
+  await expect(page.locator('#comparePanel')).toBeVisible();
+  await page.keyboard.press('c');
+  await expect(page.locator('#comparePanel')).toBeHidden();
+});
+
+test('Escape closes compare panel', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#comparePanel')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#comparePanel')).toBeHidden();
+});
+
+// ── Feature 3: Keyboard shortcut overlay ─────────────────────────────────────
+test('shortcut overlay is hidden by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#shortcutOverlay')).toBeHidden();
+});
+
+test('? key shows shortcut overlay', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('?');
+  await expect(page.locator('#shortcutOverlay')).toBeVisible();
+});
+
+test('? key again hides shortcut overlay', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('?');
+  await page.keyboard.press('?');
+  await expect(page.locator('#shortcutOverlay')).toBeHidden();
+});
+
+test('Escape closes shortcut overlay', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('?');
+  await expect(page.locator('#shortcutOverlay')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#shortcutOverlay')).toBeHidden();
+});
+
+test('shortcut overlay lists arrow key shortcuts', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('?');
+  await expect(page.locator('#shortcutOverlay')).toContainText('←');
+  await expect(page.locator('#shortcutOverlay')).toContainText('→');
+});
+
+// ── Feature 4: Permalink / deep-link ─────────────────────────────────────────
+test('URL hash updates on step change', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  await expect(page).toHaveURL(/#plain\/2/);
+});
+
+test('URL hash updates on scenario change', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await expect(page).toHaveURL(/#salted\/0/);
+});
+
+test('loading with hash navigates to correct scenario and step', async ({ page }) => {
+  await page.goto('/#salted/3');
+  await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
+  await expect(page.locator('#stepCounter')).toContainText('Step 4');
+});
+
+// ── Feature 5: Print / export ─────────────────────────────────────────────────
+test('print button is visible', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnPrint')).toBeVisible();
+});
+
+test('clicking print button calls window.print', async ({ page }) => {
+  await page.goto('/');
+  let printCalled = false;
+  await page.exposeFunction('__testPrintCalled', () => { printCalled = true; });
+  await page.evaluate(() => {
+    window.print = () => window.__testPrintCalled();
+  });
+  await page.click('#btnPrint');
+  await expect.poll(() => printCalled).toBe(true);
+});
