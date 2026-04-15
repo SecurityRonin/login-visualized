@@ -300,6 +300,21 @@ body {
 .comp-val.breach   { color: #f85149; }
 .comp-empty { font-size: 11px; color: #30363d; font-style: italic; }
 
+/* ── Formula blocks ────────────────────────────────────────────────────────── */
+.formula-row { display:flex; align-items:center; flex-wrap:wrap; gap:5px; padding:8px 0 10px; margin-bottom:6px; border-bottom:1px solid #30363d; }
+.formula-block { border-radius:4px; border:1px solid; padding:4px 8px; min-width:52px; text-align:center; }
+.formula-blk-lbl { font-size:9px; opacity:0.65; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+.formula-blk-val { font-size:11px; font-weight:600; word-break:break-all; line-height:1.3; }
+.formula-block.password { background:#2d1f00; border-color:#d29922; color:#d29922; }
+.formula-block.salt     { background:#1f1535; border-color:#a371f7; color:#a371f7; }
+.formula-block.pepper   { background:#2d1a00; border-color:#ff8c00; color:#ff8c00; }
+.formula-block.hash     { background:#0d2040; border-color:#58a6ff; color:#58a6ff; }
+.formula-block.match    { background:#0d2d0d; border-color:#3fb950; color:#3fb950; }
+.formula-block.breach   { background:#2d0d0d; border-color:#f85149; color:#f85149; }
+.formula-block.missing  { background:#161b22; border:1px dashed #484f58; color:#484f58; }
+.formula-op  { color:#8b949e; font-size:13px; font-weight:700; flex-shrink:0; padding:0 1px; }
+.formula-fn  { background:#21262d; border:1px solid #30363d; border-radius:4px; padding:3px 8px; color:#c9d1d9; font-size:10px; white-space:nowrap; flex-shrink:0; }
+
 /* DB table */
 .db-table {
   width: 100%; border-collapse: collapse; font-size: 10px;
@@ -564,6 +579,11 @@ const STEPS = {
       nodes:{ user:'active', server:'', db:'' },
       us:{ dir:'right', msg:'"password123"' }, sd:{},
       chips:['password'],
+      formula:[
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'hash next'},
+      ],
       computation:[
         { lbl:'Received:', val:'"password123"', cls:'password' },
         { lbl:'Next:', val:'hash it — never store the password itself', cls:'' },
@@ -575,6 +595,13 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'' },
       us:{}, sd:{},
       chips:['password','hash'],
+      formula:[
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'SHA-256'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'hash', v:'ef92b778bafe7712…'},
+      ],
       computation:[
         { lbl:'Input:',   val:'"password123"',        cls:'password' },
         { lbl:'SHA-256:', val:'ef92b778bafe7712…',    cls:'hash' },
@@ -592,6 +619,11 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'db-active' },
       us:{}, sd:{ dir:'right', msg:'hash only' },
       chips:['hash'],
+      formula:[
+        {k:'hash', lbl:'stored in DB', v:'ef92b778bafe7712…'},
+        {k:'op', v:'·'},
+        {k:'missing', lbl:'discarded', v:'password ✕'},
+      ],
       computation:[
         { lbl:'Stored:',   val:'ef92b778bafe7712…', cls:'hash' },
         { lbl:'Password:', val:'discarded ✓',        cls:'match' },
@@ -603,6 +635,11 @@ const STEPS = {
       nodes:{ user:'active', server:'', db:'' },
       us:{ dir:'right', msg:'"password123"' }, sd:{},
       chips:['password'],
+      formula:[
+        {k:'password', lbl:'submitted', v:'"password123"'},
+        {k:'op', v:'vs'},
+        {k:'hash', lbl:'on file', v:'ef92b778bafe7712…'},
+      ],
       computation:[
         { lbl:'Received:', val:'"password123"',        cls:'password' },
         { lbl:'On file:',  val:'ef92b778bafe7712…',   cls:'hash' },
@@ -615,6 +652,17 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'db-active' },
       us:{}, sd:{ dir:'left', msg:'stored hash' },
       chips:['hash','match'],
+      formula:[
+        {k:'password', lbl:'input', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'SHA-256'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'computed', v:'ef92b778…'},
+        {k:'op', v:'='},
+        {k:'hash', lbl:'stored', v:'ef92b778…'},
+        {k:'op', v:'→'},
+        {k:'match', lbl:'result', v:'✓ match'},
+      ],
       computation:[
         { lbl:'Re-hash:',  val:'SHA-256("password123") = ef92b778…', cls:'hash' },
         { lbl:'Stored:',   val:'ef92b778bafe7712…',                  cls:'hash' },
@@ -628,6 +676,9 @@ const STEPS = {
       nodes:{ user:'active', server:'active', db:'' },
       us:{ dir:'left', msg:'session token ✓' }, sd:{},
       chips:['match'],
+      formula:[
+        {k:'match', lbl:'session', v:'Authenticated ✓'},
+      ],
       computation:[
         { lbl:'Result:', val:'Authenticated ✓', cls:'match' },
       ],
@@ -639,6 +690,13 @@ const STEPS = {
       us:{}, sd:{},
       chips:['breach'],
       attacker:true,
+      formula:[
+        {k:'hash', lbl:'stolen', v:'ef92b778bafe7712…'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'rainbow table'},
+        {k:'op', v:'→'},
+        {k:'breach', lbl:'cracked!', v:'"password123"'},
+      ],
       computation:[
         { lbl:'Stolen:',  val:'username + hash (all users)',             cls:'breach' },
         { lbl:'Tool:',    val:'rainbow table — precomputed lookup',      cls:'breach' },
@@ -662,6 +720,11 @@ const STEPS = {
       nodes:{ user:'active', server:'', db:'' },
       us:{ dir:'right', msg:'"password123"' }, sd:{},
       chips:['password'],
+      formula:[
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'generate salt next'},
+      ],
       computation:[
         { lbl:'Received:', val:'"password123"', cls:'password' },
         { lbl:'Next:',     val:'generate a unique salt for this user', cls:'' },
@@ -673,6 +736,15 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'' },
       us:{}, sd:{},
       chips:['password','salt','hash'],
+      formula:[
+        {k:'salt', lbl:'salt (new)', v:'"x7Qm9p"'},
+        {k:'op', v:'+'},
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'SHA-256'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'hash', v:'a1b2c3d4e5f6a7b8…'},
+      ],
       computation:[
         { lbl:'Password:', val:'"password123"',                  cls:'password' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (random, per-user)',  cls:'salt' },
@@ -690,6 +762,11 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'db-active' },
       us:{}, sd:{ dir:'right', msg:'hash + salt' },
       chips:['hash','salt'],
+      formula:[
+        {k:'hash', lbl:'stored in DB', v:'a1b2c3d4e5f6a7b8…'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'stored in DB', v:'"x7Qm9p"'},
+      ],
       computation:[
         { lbl:'Hash:',  val:'a1b2c3d4e5f6a7b8…', cls:'hash' },
         { lbl:'Salt:',  val:'"x7Qm9p"',           cls:'salt' },
@@ -702,6 +779,13 @@ const STEPS = {
       nodes:{ user:'active', server:'active', db:'db-active' },
       us:{ dir:'right', msg:'"password123"' }, sd:{ dir:'left', msg:'salt: x7Qm9p' },
       chips:['password','salt'],
+      formula:[
+        {k:'password', lbl:'submitted', v:'"password123"'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'from DB', v:'"x7Qm9p"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'re-hash next'},
+      ],
       computation:[
         { lbl:'Received:', val:'"password123"',           cls:'password' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (from DB)',    cls:'salt' },
@@ -713,6 +797,19 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'' },
       us:{}, sd:{},
       chips:['hash','match'],
+      formula:[
+        {k:'salt', lbl:'salt', v:'"x7Qm9p"'},
+        {k:'op', v:'+'},
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'SHA-256'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'computed', v:'a1b2c3d4…'},
+        {k:'op', v:'='},
+        {k:'hash', lbl:'stored', v:'a1b2c3d4…'},
+        {k:'op', v:'→'},
+        {k:'match', lbl:'result', v:'✓ match'},
+      ],
       computation:[
         { lbl:'Input:',   val:'"x7Qm9p" + "password123"', cls:'' },
         { lbl:'SHA-256:', val:'a1b2c3d4e5f6a7b8…',         cls:'hash' },
@@ -727,6 +824,9 @@ const STEPS = {
       nodes:{ user:'active', server:'active', db:'' },
       us:{ dir:'left', msg:'session token ✓' }, sd:{},
       chips:['match'],
+      formula:[
+        {k:'match', lbl:'session', v:'Authenticated ✓'},
+      ],
       computation:[
         { lbl:'Result:', val:'Authenticated ✓', cls:'match' },
       ],
@@ -738,6 +838,15 @@ const STEPS = {
       us:{}, sd:{},
       chips:['breach'],
       attacker:true,
+      formula:[
+        {k:'hash', lbl:'stolen', v:'a1b2c3d4e5f6…'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'stolen', v:'"x7Qm9p"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'brute-force'},
+        {k:'op', v:'→'},
+        {k:'breach', lbl:'cracked (weak)', v:'"password123"'},
+      ],
       computation:[
         { lbl:'Stolen:',   val:'hash + salt (all users)',            cls:'breach' },
         { lbl:'Rainbow:',  val:'✗ useless — salt not in table',     cls:'breach' },
@@ -763,6 +872,13 @@ const STEPS = {
       nodes:{ user:'active', server:'', db:'' },
       us:{ dir:'right', msg:'"password123"' }, sd:{},
       chips:['password'],
+      formula:[
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'+'},
+        {k:'pepper', lbl:'pepper (vault)', v:'(loaded)'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'salt (new)', v:'random…'},
+      ],
       computation:[
         { lbl:'Received:', val:'"password123"',           cls:'password' },
         { lbl:'Pepper:',   val:'loaded from secrets vault / HSM', cls:'pepper' },
@@ -775,6 +891,17 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'' },
       us:{}, sd:{},
       chips:['password','salt','pepper','hash'],
+      formula:[
+        {k:'pepper', lbl:'pepper', v:'(vault)'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'salt', v:'"x7Qm9p"'},
+        {k:'op', v:'+'},
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'SHA-256'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'hash', v:'9f8e7d6c5b4a3f2e…'},
+      ],
       computation:[
         { lbl:'Pepper:',   val:'(secrets vault / HSM)',           cls:'pepper' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (random, per-user)',   cls:'salt' },
@@ -793,6 +920,13 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'db-active' },
       us:{}, sd:{ dir:'right', msg:'hash + salt (no pepper)' },
       chips:['hash','salt'],
+      formula:[
+        {k:'hash', lbl:'in DB', v:'9f8e7d6c5b4a3f2e…'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'in DB', v:'"x7Qm9p"'},
+        {k:'op', v:'·'},
+        {k:'missing', lbl:'NOT in DB', v:'pepper'},
+      ],
       computation:[
         { lbl:'In DB:',     val:'hash + salt',                             cls:'hash' },
         { lbl:'NOT in DB:', val:'pepper (secrets vault / HSM)',             cls:'pepper' },
@@ -810,6 +944,13 @@ const STEPS = {
       nodes:{ user:'active', server:'active', db:'db-active' },
       us:{ dir:'right', msg:'"password123"' }, sd:{ dir:'left', msg:'salt: x7Qm9p' },
       chips:['password','salt','pepper'],
+      formula:[
+        {k:'password', lbl:'submitted', v:'"password123"'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'from DB', v:'"x7Qm9p"'},
+        {k:'op', v:'+'},
+        {k:'pepper', lbl:'from vault', v:'(loaded)'},
+      ],
       computation:[
         { lbl:'Received:', val:'"password123"',          cls:'password' },
         { lbl:'Salt:',     val:'"x7Qm9p"  (from DB)',   cls:'salt' },
@@ -822,6 +963,21 @@ const STEPS = {
       nodes:{ user:'', server:'active', db:'' },
       us:{}, sd:{},
       chips:['hash','match'],
+      formula:[
+        {k:'pepper', lbl:'pepper', v:'(vault)'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'salt', v:'"x7Qm9p"'},
+        {k:'op', v:'+'},
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'SHA-256'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'computed', v:'9f8e7d6c…'},
+        {k:'op', v:'='},
+        {k:'hash', lbl:'stored', v:'9f8e7d6c…'},
+        {k:'op', v:'→'},
+        {k:'match', lbl:'result', v:'✓ match'},
+      ],
       computation:[
         { lbl:'Input:',   val:'pepper + "x7Qm9p" + "password123"', cls:'' },
         { lbl:'SHA-256:', val:'9f8e7d6c5b4a3f2e…',                  cls:'hash' },
@@ -836,6 +992,9 @@ const STEPS = {
       nodes:{ user:'active', server:'active', db:'' },
       us:{ dir:'left', msg:'session token ✓' }, sd:{},
       chips:['match'],
+      formula:[
+        {k:'match', lbl:'session', v:'Authenticated ✓'},
+      ],
       computation:[
         { lbl:'Result:', val:'Authenticated ✓', cls:'match' },
       ],
@@ -847,6 +1006,15 @@ const STEPS = {
       us:{}, sd:{},
       chips:['breach'],
       attacker:true,
+      formula:[
+        {k:'hash', lbl:'stolen', v:'9f8e7d6c5b4a3f2e…'},
+        {k:'op', v:'+'},
+        {k:'salt', lbl:'stolen', v:'"x7Qm9p"'},
+        {k:'op', v:'+'},
+        {k:'missing', lbl:'missing!', v:'pepper ???'},
+        {k:'op', v:'→'},
+        {k:'breach', lbl:'blocked', v:'cannot crack'},
+      ],
       computation:[
         { lbl:'Stolen:',  val:'hash + salt (from DB)',               cls:'breach' },
         { lbl:'Missing:', val:'pepper (app config — not in DB)',      cls:'pepper' },
@@ -864,6 +1032,16 @@ const STEPS = {
       ]},
   ],
 };
+
+// ── Formula renderer ──────────────────────────────────────────────────────────
+function renderFormula(f) {
+  if (!f || !f.length) return '';
+  return '<div class="formula-row">' + f.map(item => {
+    if (item.k === 'op') return `<span class="formula-op">${item.v}</span>`;
+    if (item.k === 'fn') return `<span class="formula-fn">${item.v}</span>`;
+    return `<div class="formula-block ${item.k}"><div class="formula-blk-lbl">${item.lbl || item.k}</div><div class="formula-blk-val">${item.v}</div></div>`;
+  }).join('') + '</div>';
+}
 
 // ── Render ─────────────────────────────────────────────────────────────────────
 function render() {
@@ -932,14 +1110,14 @@ function render() {
   // Computation
   const compEl = document.getElementById('computationRows');
   if (s.computation && s.computation.length) {
-    compEl.innerHTML = s.computation.map(r =>
+    compEl.innerHTML = renderFormula(s.formula) + s.computation.map(r =>
       '<div class="comp-row">' +
       '<span class="comp-lbl">' + r.lbl + '</span>' +
       '<span class="comp-val ' + (r.cls || '') + '">' + r.val + '</span>' +
       '</div>'
     ).join('');
   } else {
-    compEl.innerHTML = '<div class="comp-empty">—</div>';
+    compEl.innerHTML = renderFormula(s.formula) || '<div class="comp-empty">—</div>';
   }
 
   // Database

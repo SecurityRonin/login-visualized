@@ -214,6 +214,52 @@ test('computation shows pepper in peppered scenario step 2', async ({ page }) =>
   await expect(page.locator('#computationRows')).toContainText('pepper');
 });
 
+// ── Formula blocks ────────────────────────────────────────────────────────────
+test('formula row visible on hash step (plain)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('.formula-row')).toBeVisible();
+});
+
+test('formula shows password block on step 1', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('.formula-block.password')).toBeVisible();
+});
+
+test('formula shows hash block on hash step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('.formula-block.hash')).toBeVisible();
+});
+
+test('formula shows salt block in salted scenario hash step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('.formula-block.salt')).toBeVisible();
+});
+
+test('formula shows pepper block in peppered scenario hash step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="1"]');
+  await expect(page.locator('.formula-block.pepper')).toBeVisible();
+});
+
+test('formula shows missing pepper block on peppered attack step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('.formula-block.missing')).toBeVisible();
+});
+
+test('formula shows breach block on plain attack step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('.formula-block.breach')).toBeVisible();
+});
+
 // ── Attack outcomes ───────────────────────────────────────────────────────────
 test('attack section visible on step 7', async ({ page }) => {
   await page.goto('/');
