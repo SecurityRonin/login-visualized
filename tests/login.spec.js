@@ -1083,3 +1083,339 @@ test('page registers a service worker on load', async ({ page }) => {
   expect(registered).toBe(true);
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENHANCEMENT TESTS — ROUND 2 (12 features: A–K, M)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Feature A: Quiz on all 4 scenarios ──────────────────────────────────────
+test('quiz button visible on last attack step of salted', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#btnQuiz')).toBeVisible();
+});
+
+test('quiz button visible on last attack step of peppered', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#btnQuiz')).toBeVisible();
+});
+
+test('quiz button visible on last attack step of argon2', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#btnQuiz')).toBeVisible();
+});
+
+test('salted quiz has scenario-specific question about salt', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="6"]');
+  await page.click('#btnQuiz');
+  await expect(page.locator('#quizPanel')).toContainText(/salt/i);
+});
+
+test('argon2 quiz has scenario-specific question about memory', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await page.click('#btnQuiz');
+  await expect(page.locator('#quizPanel')).toContainText(/memory|RAM|Argon2/i);
+});
+
+// ── Feature B: Scenario progress tracker ────────────────────────────────────
+test('scenario tab shows completion check after visiting all steps', async ({ page }) => {
+  await page.goto('/');
+  // visit all 8 plain steps
+  for (let i = 0; i < 8; i++) await page.click(`[data-step="${i}"]`);
+  await expect(page.locator('[data-scenario="plain"] .scenario-check')).toBeVisible();
+});
+
+test('progress counter shows completed count', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#progressCounter')).toContainText('0');
+});
+
+test('completion state persists across page reload', async ({ page }) => {
+  await page.goto('/');
+  for (let i = 0; i < 8; i++) await page.click(`[data-step="${i}"]`);
+  await page.reload();
+  await expect(page.locator('[data-scenario="plain"] .scenario-check')).toBeVisible();
+});
+
+// ── Feature C: Guided tour ──────────────────────────────────────────────────
+test('first-time visitor sees tour overlay', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('tourSeen'));
+  await page.reload();
+  await expect(page.locator('#tourOverlay')).toBeVisible();
+});
+
+test('tour has multiple steps and next button advances', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.removeItem('tourSeen'));
+  await page.reload();
+  const step1 = await page.locator('#tourStep').textContent();
+  await page.click('#tourNext');
+  const step2 = await page.locator('#tourStep').textContent();
+  expect(step1).not.toBe(step2);
+});
+
+test('tour does not appear on return visit', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('tourSeen', '1'));
+  await page.reload();
+  await expect(page.locator('#tourOverlay')).toBeHidden();
+});
+
+// ── Feature D: zxcvbn-lite password strength ────────────────────────────────
+test('strength demo shows pattern feedback for dictionary word', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await page.fill('#strengthInput', 'password');
+  await expect(page.locator('#strengthResult')).toContainText(/common|dictionary/i);
+});
+
+test('strength demo identifies keyboard pattern', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await page.fill('#strengthInput', 'qwerty123');
+  await expect(page.locator('#strengthResult')).toContainText(/keyboard|pattern|common/i);
+});
+
+test('strength demo shows strong result for complex password', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await page.fill('#strengthInput', 'j#9Kx!mP2vR$wL7q');
+  await expect(page.locator('#strengthResult')).toContainText(/centuries|decades|years/i);
+});
+
+// ── Feature E: Side-by-side dual view ───────────────────────────────────────
+test('dual view button visible in toolbar', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnDual')).toBeVisible();
+});
+
+test('clicking dual view opens split panel with two scenario selectors', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnDual');
+  await expect(page.locator('#dualPanel')).toBeVisible();
+  await expect(page.locator('#dualPanel select').first()).toBeVisible();
+});
+
+test('dual view shows data for both selected scenarios', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnDual');
+  await expect(page.locator('#dualPanel .dual-col')).toHaveCount(2);
+});
+
+// ── Feature F: ARIA landmarks & accessibility ───────────────────────────────
+test('main content area has role main', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[role="main"]')).toBeVisible();
+});
+
+test('wizard panel has role navigation', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[role="navigation"]')).toBeVisible();
+});
+
+test('icon buttons have aria-label attributes', async ({ page }) => {
+  await page.goto('/');
+  const btns = ['#btnPrev', '#btnNext', '#btnReset', '#btnCompare', '#btnTheme', '#btnPrint'];
+  for (const sel of btns) {
+    const label = await page.locator(sel).getAttribute('aria-label');
+    expect(label).toBeTruthy();
+  }
+});
+
+test('step description has aria-live polite', async ({ page }) => {
+  await page.goto('/');
+  const live = await page.locator('.step-description').getAttribute('aria-live');
+  expect(live).toBe('polite');
+});
+
+test('keyboard focus outlines are visible on buttons', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+  const outlineStyle = await page.evaluate(() => {
+    const el = document.querySelector(':focus');
+    if (!el) return '';
+    return window.getComputedStyle(el).outlineStyle;
+  });
+  expect(outlineStyle).not.toBe('none');
+  expect(outlineStyle).not.toBe('');
+});
+
+// ── Feature G: i18n — 5 languages ──────────────────────────────────────────
+test('language selector is visible', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#langSelector')).toBeVisible();
+});
+
+test('switching to zh-TW changes step counter text', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'zh-TW');
+  const text = await page.locator('#stepCounter').textContent();
+  expect(text).toMatch(/步驟/);
+});
+
+test('switching to zh-CN changes step counter text', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'zh-CN');
+  const text = await page.locator('#stepCounter').textContent();
+  expect(text).toMatch(/步骤/);
+});
+
+test('switching to fr changes step counter text', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'fr');
+  const text = await page.locator('#stepCounter').textContent();
+  expect(text).toMatch(/Étape/i);
+});
+
+test('switching to ja changes step counter text', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'ja');
+  const text = await page.locator('#stepCounter').textContent();
+  expect(text).toMatch(/ステップ/);
+});
+
+test('language preference persists across reload', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'ja');
+  await page.reload();
+  const text = await page.locator('#stepCounter').textContent();
+  expect(text).toMatch(/ステップ/);
+});
+
+test('switching to zh-TW changes scenario button text', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'zh-TW');
+  await expect(page.locator('[data-scenario="plain"]')).toContainText(/純雜湊/);
+});
+
+test('switching to fr changes toolbar button text', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#langSelector', 'fr');
+  await expect(page.locator('#btnNext')).toContainText(/Suivant/i);
+});
+
+// ── Feature H: localStorage persistence ─────────────────────────────────────
+test('theme preference persists across reload', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnTheme');
+  await expect(page.locator('body')).toHaveClass(/light-mode/);
+  await page.reload();
+  await expect(page.locator('body')).toHaveClass(/light-mode/);
+});
+
+test('last scenario+step persists across reload', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('[data-step="3"]');
+  await page.reload();
+  await expect(page.locator('#stepCounter')).toContainText('4');
+  await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
+});
+
+test('resume prompt appears on return to unfinished session', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="4"]');
+  await page.evaluate(() => localStorage.setItem('lv_hasVisited', '1'));
+  await page.reload();
+  await expect(page.locator('#resumePrompt')).toBeVisible();
+});
+
+test('clicking resume restores last position', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  await page.click('[data-step="4"]');
+  await page.evaluate(() => localStorage.setItem('lv_hasVisited', '1'));
+  await page.reload();
+  await page.click('#resumeYes');
+  await expect(page.locator('#stepCounter')).toContainText('5');
+});
+
+// ── Feature I: Export / Share ────────────────────────────────────────────────
+test('export button is visible in toolbar', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnExport')).toBeVisible();
+});
+
+test('share button is visible in toolbar', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnShare')).toBeVisible();
+});
+
+test('clicking share opens share menu with links', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnShare');
+  await expect(page.locator('#shareMenu')).toBeVisible();
+  await expect(page.locator('#shareMenu a')).toHaveCount(2); // WhatsApp + Telegram
+});
+
+test('share links contain current permalink', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="3"]');
+  await page.click('#btnShare');
+  const href = await page.locator('#shareMenu a').first().getAttribute('href');
+  expect(href).toContain('plain/3');
+});
+
+// ── Feature J: Animated data flow ───────────────────────────────────────────
+test('active arrow has animated particle on step 1', async ({ page }) => {
+  await page.goto('/');
+  const particle = page.locator('.arrow-particle');
+  await expect(particle.first()).toBeVisible();
+});
+
+test('particle not visible when arrow is inactive', async ({ page }) => {
+  await page.goto('/');
+  // on step 0, SD arrow is inactive
+  const sdParticle = page.locator('#lineSD .arrow-particle');
+  await expect(sdParticle).toHaveCount(0);
+});
+
+// ── Feature K: Step narration ───────────────────────────────────────────────
+test('narrate button is visible in toolbar', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnNarrate')).toBeVisible();
+});
+
+test('clicking narrate calls speechSynthesis.speak', async ({ page }) => {
+  await page.goto('/');
+  let spoken = false;
+  await page.evaluate(() => {
+    window.speechSynthesis.speak = () => { window.__speechCalled = true; };
+  });
+  await page.click('#btnNarrate');
+  const called = await page.evaluate(() => window.__speechCalled);
+  expect(called).toBe(true);
+});
+
+// ── Feature M: PWA manifest + favicon ───────────────────────────────────────
+test('manifest.json is served', async ({ page }) => {
+  const response = await page.goto('/manifest.json');
+  expect(response.status()).toBe(200);
+});
+
+test('page has link to manifest', async ({ page }) => {
+  await page.goto('/');
+  const href = await page.locator('link[rel="manifest"]').getAttribute('href');
+  expect(href).toContain('manifest');
+});
+
+test('page has favicon link', async ({ page }) => {
+  await page.goto('/');
+  const icon = await page.locator('link[rel="icon"]').getAttribute('href');
+  expect(icon).toBeTruthy();
+});
+
