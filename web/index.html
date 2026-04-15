@@ -331,27 +331,25 @@ body {
 .attack-outcome.partial { background: #2d1a00; border: 1px solid #d29922; color: #d29922; }
 .attack-outcome.success { background: #0d2d0d; border: 1px solid #3fb950; color: #3fb950; }
 
-/* ── Footer ────────────────────────────────────────────────────────────────── */
-.app-footer {
-  background: #161b22;
-  border-top: 1px solid #30363d;
-  padding: 9px 20px;
-  display: flex; align-items: center; gap: 12px;
+/* ── Toolbar nav (prev / next / reset — flushed right in header) ───────────── */
+.toolbar-nav {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 6px;
   flex-shrink: 0;
 }
 .nav-btn {
   background: #21262d;
   border: 1px solid #30363d;
   color: #c9d1d9;
-  padding: 5px 16px;
+  padding: 4px 13px;
   border-radius: 6px; cursor: pointer;
   font-family: inherit; font-size: 12px;
   transition: all 0.15s;
 }
 .nav-btn:hover:not(:disabled) { border-color: #58a6ff; color: #58a6ff; }
 .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.step-counter { font-size: 11px; color: #8b949e; flex: 1; text-align: center; }
-.key-hint { font-size: 10px; color: #30363d; }
+.nav-btn.reset-btn:hover:not(:disabled) { border-color: #d29922; color: #d29922; }
+.step-counter { font-size: 11px; color: #8b949e; padding: 0 4px; white-space: nowrap; }
 
 /* ── OWASP Refs ────────────────────────────────────────────────────────────── */
 .refs-section { padding: 10px 14px; border-bottom: 1px solid #30363d; }
@@ -397,6 +395,12 @@ body {
     <button class="scenario-btn active" data-scenario="plain"    onclick="setScenario('plain')">1 · Plain Hash</button>
     <button class="scenario-btn"        data-scenario="salted"   onclick="setScenario('salted')">2 · With Salt</button>
     <button class="scenario-btn"        data-scenario="peppered" onclick="setScenario('peppered')">3 · Salt + Pepper</button>
+  </div>
+  <div class="toolbar-nav">
+    <button class="nav-btn" id="btnPrev" onclick="prevStep()">← Prev</button>
+    <span class="step-counter" id="stepCounter">Step 1 of 7</span>
+    <button class="nav-btn" id="btnNext" onclick="nextStep()">Next →</button>
+    <button class="nav-btn reset-btn" id="btnReset" onclick="resetAll()">↺ Reset</button>
   </div>
 </header>
 
@@ -522,14 +526,6 @@ body {
   </div>
 
 </main>
-
-<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
-<footer class="app-footer">
-  <button class="nav-btn" id="btnPrev" onclick="prevStep()">← Prev</button>
-  <div class="step-counter" id="stepCounter">Step 1 of 7</div>
-  <button class="nav-btn" id="btnNext" onclick="nextStep()">Next →</button>
-  <div class="key-hint">← → keys · 1 2 3 scenarios</div>
-</footer>
 
 <footer style="text-align:center;padding:0.8rem 1rem;font-size:0.7rem;color:#8b949e;background:#161b22;border-top:1px solid #30363d;">
     <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:0.4rem;flex-wrap:wrap;">
@@ -1001,6 +997,14 @@ function render() {
 function selectStep(n) { state.step = n; render(); }
 function nextStep() { if (state.step < 6) { state.step++; render(); } }
 function prevStep() { if (state.step > 0) { state.step--; render(); } }
+function resetAll() {
+  state.step = 0;
+  state.scenario = 'plain';
+  document.querySelectorAll('.scenario-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.scenario === 'plain')
+  );
+  render();
+}
 
 function setScenario(sc) {
   state.scenario = sc;
@@ -1017,6 +1021,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '1') setScenario('plain');
   if (e.key === '2') setScenario('salted');
   if (e.key === '3') setScenario('peppered');
+  if (e.key === 'r' || e.key === 'R') resetAll();
 });
 
 render();

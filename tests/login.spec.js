@@ -111,6 +111,25 @@ test('keyboard 1/2/3 switches scenarios', async ({ page }) => {
   await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
 });
 
+test('reset button resets to step 1 plain', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="peppered"]');
+  for (let i = 0; i < 3; i++) await page.click('#btnNext');
+  await page.click('#btnReset');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
+  await expect(page.locator('[data-scenario="peppered"]')).not.toHaveClass(/active/);
+});
+
+test('keyboard r resets to step 1 plain', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="salted"]');
+  await page.click('#btnNext');
+  await page.keyboard.press('r');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
+});
+
 // ── Step content ─────────────────────────────────────────────────────────────
 test('step tag shows REGISTER on step 1', async ({ page }) => {
   await page.goto('/');
