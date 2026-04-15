@@ -557,44 +557,7 @@ body {
 
   <!-- LEFT: Wizard steps -->
   <div class="wizard-panel" id="wizardPanel">
-    <div class="wizard-section">Register</div>
-    <div class="wizard-step" data-step="0" onclick="selectStep(0)">
-      <div class="ws-label">Step 1</div>
-      <div class="ws-title">Send Password</div>
-      <div class="ws-chips" id="chips-0"></div>
-    </div>
-    <div class="wizard-step" data-step="1" onclick="selectStep(1)">
-      <div class="ws-label">Step 2</div>
-      <div class="ws-title">Process Password</div>
-      <div class="ws-chips" id="chips-1"></div>
-    </div>
-    <div class="wizard-step" data-step="2" onclick="selectStep(2)">
-      <div class="ws-label">Step 3</div>
-      <div class="ws-title">Store in Database</div>
-      <div class="ws-chips" id="chips-2"></div>
-    </div>
-    <div class="wizard-section">Login</div>
-    <div class="wizard-step" data-step="3" onclick="selectStep(3)">
-      <div class="ws-label">Step 4</div>
-      <div class="ws-title">Submit Password</div>
-      <div class="ws-chips" id="chips-3"></div>
-    </div>
-    <div class="wizard-step" data-step="4" onclick="selectStep(4)">
-      <div class="ws-label">Step 5</div>
-      <div class="ws-title">Verify Credentials</div>
-      <div class="ws-chips" id="chips-4"></div>
-    </div>
-    <div class="wizard-step" data-step="5" onclick="selectStep(5)">
-      <div class="ws-label">Step 6</div>
-      <div class="ws-title">Access Granted</div>
-      <div class="ws-chips" id="chips-5"></div>
-    </div>
-    <div class="wizard-section">Attack</div>
-    <div class="wizard-step attack" data-step="6" onclick="selectStep(6)">
-      <div class="ws-label">Step 7</div>
-      <div class="ws-title">Database Stolen</div>
-      <div class="ws-chips" id="chips-6"></div>
-    </div>
+    <!-- populated dynamically by renderWizard() -->
   </div>
 
   <!-- CENTRE: Main panel (diagram + scrollable content) -->
@@ -874,8 +837,40 @@ const STEPS = {
         { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true },
       ]},
 
-    { tag:'attack', title:'Database Stolen',
-      desc:'An attacker breaches the database and downloads every row. Alice and Bob used the same password — they have <strong style="color:#f85149">identical hashes</strong>. One rainbow table lookup cracks both accounts simultaneously.',
+    { tag:'attack', title:'Same Hash = Simultaneous Exposure',
+      desc:'Database stolen. Alice and Bob used the same password — so they have <strong style="color:#f85149">identical hashes</strong>. This is the core problem salt was designed to solve: one successful crack instantly compromises every account sharing that password.<br><br>Salt fixes this at the root. A random per-user salt makes every hash unique — even when two users choose identical passwords. Without salt, your breach radius expands with your user count.',
+      nodes:{ user:'', server:'', db:'breach' },
+      us:{}, sd:{},
+      chips:['breach'],
+      attacker:true,
+      formula:[
+        {k:'hash', lbl:'alice', v:'ef92b778…'},
+        {k:'op', v:'='},
+        {k:'hash', lbl:'bob', v:'ef92b778…'},
+        {k:'op', v:'→'},
+        {k:'breach', lbl:'one crack', v:'both fall'},
+      ],
+      computation:[
+        { lbl:'Alice hash:', val:'ef92b778bafe7712…',               cls:'breach' },
+        { lbl:'Bob hash:',   val:'ef92b778bafe7712…  ← identical',  cls:'breach' },
+        { lbl:'Why:',        val:'no salt — same password → same hash always', cls:'' },
+        { lbl:'Result:',     val:'crack alice → bob compromised for free', cls:'breach' },
+        { lbl:'Scale:',      val:'3,000 users chose "password123" → 3,000 accounts fall at once', cls:'breach' },
+      ],
+      db:[
+        { username:'alice',   hash:'ef92b778bafe7712…', populated:true, breach:true, massCrack:true },
+        { username:'bob',     hash:'ef92b778bafe7712…', populated:true, breach:true, massCrack:true },
+        { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true, breach:true },
+      ],
+      attack:{ level:'fail',
+        text:'⚠️ Salt was invented specifically to eliminate this risk. A random per-user salt makes every hash unique — cracking one tells you nothing about another. This is the first reason to add salt. The next step shows a second, even more powerful reason.' },
+      thinkWhy:'If 3,000 of your users chose "password123", a single database breach exposes all 3,000 at once. Does your current system prevent this?',
+      refs:[
+        { label:'OWASP: Salting — the fix for this problem', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#salting' },
+      ]},
+
+    { tag:'attack', title:'Rainbow Table: Upgraded Firepower',
+      desc:'Salt prevents simultaneous cracks. But there is a second, more powerful attack: the <strong>rainbow table</strong> — a precomputed dictionary of billions of hash→password mappings. SHA-256 is so fast (billions of hashes per second on a GPU) that every common password was computed and indexed years ago. Even without simultaneous exposure, a single hash lookup finds the answer in under a second.',
       nodes:{ user:'', server:'', db:'breach' },
       us:{}, sd:{},
       chips:['breach'],
@@ -888,11 +883,11 @@ const STEPS = {
         {k:'breach', lbl:'cracked!', v:'"password123"'},
       ],
       computation:[
-        { lbl:'Stolen:',  val:'username + hash (all users)',             cls:'breach' },
-        { lbl:'Tool:',    val:'rainbow table — precomputed lookup',      cls:'breach' },
-        { lbl:'Lookup:',  val:'ef92b778… → "password123"',              cls:'breach' },
-        { lbl:'Time:',    val:'< 1 second',                              cls:'breach' },
-        { lbl:'Scope:',   val:'alice + bob cracked by one lookup — simultaneously', cls:'breach' },
+        { lbl:'Stolen:',  val:'ef92b778bafe7712…',                       cls:'breach' },
+        { lbl:'Method:',  val:'rainbow table — precomputed hash→password dictionary', cls:'breach' },
+        { lbl:'Why fast:',val:'SHA-256: ~10 billion hashes/sec on GPU',  cls:'' },
+        { lbl:'Lookup:',  val:'ef92b778… → "password123"',               cls:'breach' },
+        { lbl:'Time:',    val:'< 1 second',                               cls:'breach' },
       ],
       db:[
         { username:'alice',   hash:'ef92b778bafe7712…', populated:true, breach:true, massCrack:true },
@@ -900,15 +895,15 @@ const STEPS = {
         { username:'charlie', hash:'5baa61e4c9b93f3f…', populated:true, breach:true },
       ],
       crackBar:[
-        { lbl:'Rainbow table', pct:100, cls:'instant', time:'< 1 second' },
-        { lbl:'alice + bob',   pct:100, cls:'instant', time:'1 lookup — both' },
-        { lbl:'charlie',       pct:100, cls:'instant', time:'< 1 second' },
+        { lbl:'Rainbow table lookup', pct:100, cls:'instant', time:'< 1 second' },
+        { lbl:'alice + bob (1 crack)', pct:100, cls:'instant', time:'< 1 second' },
+        { lbl:'charlie',               pct:100, cls:'instant', time:'< 1 second' },
       ],
       attack:{ level:'fail',
-        text:'🔓 Rainbow table attack succeeds instantly. Because no salt was added, the same password always produces the same hash. One lookup cracks every account that shares that password — simultaneously.' },
-      thinkWhy:'If 3,000 of your users chose "password123", a single database breach exposes all 3,000 at once. Does your current system prevent this?',
+        text:'🔓 Rainbow table attack succeeds instantly. Salt defeats rainbow tables because each unique hash would require its own precomputed table — computationally infeasible. But salt alone is not enough: if SHA-256 is still used, per-user brute force becomes the fallback. See Scenario 4 for why speed itself must be the target.' },
+      thinkWhy:'Rainbow tables exist for SHA-256, MD5, SHA-1, and every other fast hash. The only defences: salt (defeats precomputed tables) and a slow hash (defeats per-user brute force). Which of these does your system use?',
       refs:[
-        { label:'OWASP: Salting (what was missing here)', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#salting' },
+        { label:'OWASP: Salting defeats rainbow tables', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#salting' },
         { label:'OWASP: Upgrading Legacy Hashes', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#upgrading-legacy-hashes' },
       ]},
   ],
@@ -1469,6 +1464,30 @@ function renderFormula(f) {
   }).join('') + '</div>';
 }
 
+// ── Wizard (dynamic — regenerated on scenario change) ─────────────────────────
+function renderWizard() {
+  const steps = STEPS[state.scenario];
+  let lastTag = '';
+  const wizardPanel = document.getElementById('wizardPanel');
+  wizardPanel.innerHTML = steps.map((step, i) => {
+    let html = '';
+    // Insert section header when tag group changes
+    if (step.tag !== lastTag) {
+      lastTag = step.tag;
+      const label = step.tag === 'register' ? 'Register' :
+                    step.tag === 'login'    ? 'Login' : 'Attack';
+      html += `<div class="wizard-section">${label}</div>`;
+    }
+    const isAttack = step.tag === 'attack';
+    html += `<div class="wizard-step${isAttack ? ' attack' : ''}" data-step="${i}" onclick="selectStep(${i})">
+      <div class="ws-label">Step ${i + 1}</div>
+      <div class="ws-title">${step.title}</div>
+      <div class="ws-chips" id="chips-${i}"></div>
+    </div>`;
+    return html;
+  }).join('');
+}
+
 // ── Render ─────────────────────────────────────────────────────────────────────
 function render() {
   const s = STEPS[state.scenario][state.step];
@@ -1478,7 +1497,7 @@ function render() {
     el.classList.toggle('active', i === state.step);
   });
 
-  // Chips (for all 7 steps)
+  // Chips (for all steps in current scenario)
   STEPS[state.scenario].forEach((step, i) => {
     const el = document.getElementById('chips-' + i);
     if (el) el.innerHTML = (step.chips || []).map(c =>
@@ -1654,7 +1673,7 @@ document.getElementById('liveHashInput').addEventListener('input', async functio
 
 // ── Navigation ─────────────────────────────────────────────────────────────────
 function selectStep(n) { state.step = n; render(); }
-function nextStep() { if (state.step < 6) { state.step++; render(); } }
+function nextStep() { if (state.step < STEPS[state.scenario].length - 1) { state.step++; render(); } }
 function prevStep() { if (state.step > 0) { state.step--; render(); } }
 function resetAll() {
   state.step = 0;
@@ -1662,6 +1681,7 @@ function resetAll() {
   document.querySelectorAll('.scenario-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.scenario === 'plain')
   );
+  renderWizard();
   render();
 }
 
@@ -1671,6 +1691,7 @@ function setScenario(sc) {
   document.querySelectorAll('.scenario-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.scenario === sc)
   );
+  renderWizard();
   render();
 }
 
@@ -1724,8 +1745,9 @@ function toggleShortcuts() {
 
 // ── Keydown ────────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  // Don't fire shortcuts when typing in an input
+  // Don't fire shortcuts when typing in an input, or when a modifier key is held
   if (e.target.tagName === 'INPUT') return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
 
   const compareVisible   = document.getElementById('comparePanel').classList.contains('visible');
   const shortcutVisible  = document.getElementById('shortcutOverlay').classList.contains('visible');
@@ -1766,6 +1788,7 @@ document.addEventListener('keydown', e => {
   }
 })();
 
+renderWizard();
 render();
 </script>
 </body>

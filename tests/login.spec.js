@@ -78,9 +78,9 @@ test('switching scenario resets to step 1', async ({ page }) => {
 });
 
 // ── Wizard panel ─────────────────────────────────────────────────────────────
-test('seven wizard steps present', async ({ page }) => {
+test('eight wizard steps present for plain scenario', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.wizard-step')).toHaveCount(7);
+  await expect(page.locator('.wizard-step')).toHaveCount(8);
 });
 
 test('first step active on load', async ({ page }) => {
@@ -92,7 +92,7 @@ test('first step active on load', async ({ page }) => {
 test('wizard step click navigates directly', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-step="4"]');
-  await expect(page.locator('#stepCounter')).toContainText('Step 5 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 5 of 8');
   const step5 = page.locator('[data-step="4"]');
   await expect(step5).toHaveClass(/active/);
 });
@@ -104,22 +104,22 @@ test('attack step has attack styling when active', async ({ page }) => {
 });
 
 // ── Step navigation ───────────────────────────────────────────────────────────
-test('step counter shows 1 of 7 on load', async ({ page }) => {
+test('step counter shows 1 of 8 on load (plain has 8 steps)', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
 });
 
 test('next button advances step', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnNext');
-  await expect(page.locator('#stepCounter')).toContainText('Step 2 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 2 of 8');
 });
 
 test('prev button goes back', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnNext');
   await page.click('#btnPrev');
-  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
 });
 
 test('prev button disabled on first step', async ({ page }) => {
@@ -129,21 +129,21 @@ test('prev button disabled on first step', async ({ page }) => {
 
 test('next button disabled on last step', async ({ page }) => {
   await page.goto('/');
-  for (let i = 0; i < 6; i++) await page.click('#btnNext');
+  for (let i = 0; i < 7; i++) await page.click('#btnNext'); // 8 steps → 7 clicks to reach step 8
   await expect(page.locator('#btnNext')).toBeDisabled();
 });
 
 test('arrow key right advances step', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('ArrowRight');
-  await expect(page.locator('#stepCounter')).toContainText('Step 2 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 2 of 8');
 });
 
 test('arrow key left goes back', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowLeft');
-  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
 });
 
 test('keyboard 1/2/3 switches scenarios', async ({ page }) => {
@@ -161,7 +161,7 @@ test('reset button resets to step 1 plain', async ({ page }) => {
   await page.click('[data-scenario="peppered"]');
   for (let i = 0; i < 3; i++) await page.click('#btnNext');
   await page.click('#btnReset');
-  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
   await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
   await expect(page.locator('[data-scenario="peppered"]')).not.toHaveClass(/active/);
 });
@@ -171,7 +171,7 @@ test('keyboard r resets to step 1 plain', async ({ page }) => {
   await page.click('[data-scenario="salted"]');
   await page.click('#btnNext');
   await page.keyboard.press('r');
-  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
+  await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
   await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
 });
 
@@ -432,9 +432,9 @@ test('typing in live hash input updates output', async ({ page }) => {
 });
 
 // ── Cracking time bar ─────────────────────────────────────────────────────────
-test('crack bar visible on attack step', async ({ page }) => {
+test('crack bar visible on attack step with crack bar data', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-step="6"]');
+  await page.click('[data-step="7"]'); // step 7 = rainbow table (has crackBar)
   await expect(page.locator('#crackBarSection')).toBeVisible();
 });
 
