@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://login-visualized.securityronin.com/sitemap.xml
