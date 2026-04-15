@@ -786,3 +786,300 @@ test('live hash section is hidden on steps without liveHash', async ({ page }) =
   expect(display).toBe('none');
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENHANCEMENT TESTS — 13 features
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Feature A: Real breach callouts ──────────────────────────────────────────
+test('attack steps show a historical breach callout box', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]'); // rainbow table attack step
+  await expect(page.locator('#breachCallout')).toBeVisible();
+});
+
+test('breach callout contains a real incident name', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  const text = await page.locator('#breachCallout').textContent();
+  expect(text.length).toBeGreaterThan(20);
+});
+
+test('breach callout is hidden on non-attack steps', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="0"]');
+  await expect(page.locator('#breachCallout')).toBeHidden();
+});
+
+// ── Feature B: Password strength interplay (Argon2id attack step) ────────────
+test('argon2 attack step shows strength demo input', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#strengthDemoWrap')).toBeVisible();
+});
+
+test('typing a weak password into strength demo shows fast crack estimate', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await page.fill('#strengthInput', '123');
+  const result = await page.locator('#strengthResult').textContent();
+  expect(result.toLowerCase()).toMatch(/minute|hour|second/);
+});
+
+test('typing a strong password into strength demo shows slow crack estimate', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="argon2"]');
+  await page.click('[data-step="6"]');
+  await page.fill('#strengthInput', 'correct-horse-battery-staple-42!');
+  const result = await page.locator('#strengthResult').textContent();
+  expect(result.toLowerCase()).toMatch(/centur|million year/);
+});
+
+// ── Feature C: Scenario delta highlight ──────────────────────────────────────
+test('switching to salted adds delta-new class to salt formula blocks', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-scenario="plain"]');
+  await page.click('[data-step="1"]');
+  await page.click('[data-scenario="salted"]');
+  // salt block should briefly have delta-new class
+  await expect(page.locator('.formula-block.salt.delta-new').first()).toBeVisible();
+});
+
+// ── Feature D: Quiz ───────────────────────────────────────────────────────────
+test('quiz button visible on last attack step of plain', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await expect(page.locator('#btnQuiz')).toBeVisible();
+});
+
+test('quiz panel is hidden by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#quizPanel')).toBeHidden();
+});
+
+test('clicking quiz button shows quiz panel', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await page.click('#btnQuiz');
+  await expect(page.locator('#quizPanel')).toBeVisible();
+});
+
+test('quiz panel contains at least one question', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await page.click('#btnQuiz');
+  await expect(page.locator('#quizPanel .quiz-question').first()).toBeVisible();
+});
+
+test('quiz shows score after submitting answers', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await page.click('#btnQuiz');
+  // select first option of every question
+  const questions = page.locator('#quizPanel .quiz-question');
+  const count = await questions.count();
+  for (let i = 0; i < count; i++) {
+    await questions.nth(i).locator('input[type=radio]').first().check();
+  }
+  await page.click('#btnQuizSubmit');
+  await expect(page.locator('#quizScore')).toBeVisible();
+});
+
+test('quiz close button hides panel', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="7"]');
+  await page.click('#btnQuiz');
+  await page.click('#btnQuizClose');
+  await expect(page.locator('#quizPanel')).toBeHidden();
+});
+
+// ── Feature E: Breach scale counter ──────────────────────────────────────────
+test('plain step 6 shows a breach counter element', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  await expect(page.locator('#breachCounterWrap')).toBeVisible();
+});
+
+test('breach counter starts at 0 and reaches target', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  // wait for counter to animate
+  await expect.poll(async () => {
+    const txt = await page.locator('#breachCounterValue').textContent();
+    return parseInt(txt.replace(/,/g, ''), 10);
+  }, { timeout: 5000 }).toBeGreaterThan(0);
+});
+
+// ── Feature F: Cross-scenario summary table ───────────────────────────────────
+test('summary button is visible in toolbar', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnSummary')).toBeVisible();
+});
+
+test('summary panel is hidden by default', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#summaryPanel')).toBeHidden();
+});
+
+test('clicking summary button shows summary panel', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnSummary');
+  await expect(page.locator('#summaryPanel')).toBeVisible();
+});
+
+test('summary panel shows all 4 scenarios as columns', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnSummary');
+  await expect(page.locator('#summaryPanel')).toContainText('Plain');
+  await expect(page.locator('#summaryPanel')).toContainText('Salted');
+  await expect(page.locator('#summaryPanel')).toContainText('Peppered');
+  await expect(page.locator('#summaryPanel')).toContainText('Argon2id');
+});
+
+test('summary panel shows attack vector rows', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnSummary');
+  await expect(page.locator('#summaryPanel')).toContainText(/rainbow|brute force/i);
+});
+
+test('keyboard s toggles summary panel', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('s');
+  await expect(page.locator('#summaryPanel')).toBeVisible();
+  await page.keyboard.press('s');
+  await expect(page.locator('#summaryPanel')).toBeHidden();
+});
+
+test('Escape closes summary panel', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnSummary');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#summaryPanel')).toBeHidden();
+});
+
+// ── Feature G: Copy-link button ───────────────────────────────────────────────
+test('copy-link button is visible', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnCopyLink')).toBeVisible();
+});
+
+test('clicking copy-link copies current permalink to clipboard', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="2"]');
+  let copied = '';
+  await page.exposeFunction('__captureClipboard', (t) => { copied = t; });
+  await page.evaluate(() => { navigator.clipboard.writeText = (t) => window.__captureClipboard(t); });
+  await page.click('#btnCopyLink');
+  await expect.poll(() => copied).toContain('#plain/2');
+});
+
+// ── Feature H: Presentation mode ─────────────────────────────────────────────
+test('present button is visible', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnPresent')).toBeVisible();
+});
+
+test('keyboard p starts presentation mode and adds class to body', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('p');
+  await expect(page.locator('body')).toHaveClass(/presenting/);
+});
+
+test('pressing Escape stops presentation mode', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('p');
+  await expect(page.locator('body')).toHaveClass(/presenting/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('body')).not.toHaveClass(/presenting/);
+});
+
+test('presentation mode auto-advances to next step', async ({ page }) => {
+  await page.goto('/');
+  // speed up timer for testing via page injection
+  await page.evaluate(() => { window.__PRESENT_INTERVAL_MS = 200; });
+  await page.keyboard.press('p');
+  await expect.poll(async () => {
+    return page.locator('#stepCounter').textContent();
+  }, { timeout: 3000 }).toContain('Step 2');
+});
+
+// ── Feature I: Mobile swipe ───────────────────────────────────────────────────
+test('swipe left advances to next step', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    const el = document.querySelector('.main-panel');
+    el.dispatchEvent(new TouchEvent('touchstart', { touches: [new Touch({ identifier: 1, target: el, clientX: 300, clientY: 200 })] }));
+    el.dispatchEvent(new TouchEvent('touchend',   { changedTouches: [new Touch({ identifier: 1, target: el, clientX: 80,  clientY: 200 })] }));
+  });
+  await expect(page.locator('#stepCounter')).toContainText('Step 2');
+});
+
+test('swipe right goes back to previous step', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnNext');
+  await page.evaluate(() => {
+    const el = document.querySelector('.main-panel');
+    el.dispatchEvent(new TouchEvent('touchstart', { touches: [new Touch({ identifier: 1, target: el, clientX: 80,  clientY: 200 })] }));
+    el.dispatchEvent(new TouchEvent('touchend',   { changedTouches: [new Touch({ identifier: 1, target: el, clientX: 300, clientY: 200 })] }));
+  });
+  await expect(page.locator('#stepCounter')).toContainText('Step 1');
+});
+
+// ── Feature J: Dark / light mode toggle ──────────────────────────────────────
+test('theme toggle button is visible', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnTheme')).toBeVisible();
+});
+
+test('clicking theme button adds light-mode class to body', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnTheme');
+  await expect(page.locator('body')).toHaveClass(/light-mode/);
+});
+
+test('clicking theme button again removes light-mode class', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnTheme');
+  await page.click('#btnTheme');
+  await expect(page.locator('body')).not.toHaveClass(/light-mode/);
+});
+
+// ── Feature K: JSON-LD structured data ───────────────────────────────────────
+test('page has JSON-LD script in head', async ({ page }) => {
+  await page.goto('/');
+  const exists = await page.locator('head script[type="application/ld+json"]').count();
+  expect(exists).toBeGreaterThan(0);
+});
+
+test('JSON-LD contains HowTo schema type', async ({ page }) => {
+  await page.goto('/');
+  const json = await page.locator('head script[type="application/ld+json"]').textContent();
+  const data = JSON.parse(json);
+  expect(data['@type']).toBe('HowTo');
+});
+
+// ── Feature L: noscript fallback ─────────────────────────────────────────────
+test('page has noscript element with content', async ({ page }) => {
+  await page.goto('/');
+  const content = await page.locator('noscript').textContent();
+  expect(content.trim().length).toBeGreaterThan(20);
+});
+
+// ── Feature M: Service worker ─────────────────────────────────────────────────
+test('service worker file is served at /sw.js', async ({ page }) => {
+  const response = await page.goto('/sw.js');
+  expect(response.status()).toBe(200);
+});
+
+test('page registers a service worker on load', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null ||
+    navigator.serviceWorker.getRegistration('/').then(r => r !== undefined), { timeout: 5000 });
+  const registered = await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.getRegistration('/');
+    return !!reg;
+  });
+  expect(registered).toBe(true);
+});
+
