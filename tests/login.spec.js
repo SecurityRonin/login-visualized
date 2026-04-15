@@ -488,6 +488,16 @@ test('plain step 6 describes the simultaneous exposure problem and salt', async 
   expect(text.toLowerCase()).toMatch(/simultaneous|salt/);
 });
 
+test('plain step 6 charlie row is NOT shown as breached (only alice+bob are)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-step="6"]');
+  // charlie row must not carry breach/mass-crack styling on this step
+  const charlieRow = page.locator('.db-table tr').filter({ hasText: 'charlie' });
+  await expect(charlieRow).not.toHaveClass(/mass-crack/);
+  const charlieHash = charlieRow.locator('td').nth(1);
+  await expect(charlieHash).not.toHaveClass(/breach/);
+});
+
 test('plain step 7 describes rainbow table attack', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-step="7"]');
