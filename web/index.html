@@ -436,6 +436,78 @@ body {
   .app-main { grid-template-columns: 1fr; }
   .wizard-panel { display: none; }
 }
+
+/* ── Compare panel overlay ───────────────────────────────────────────────── */
+#comparePanel {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(13,17,23,0.92);
+  z-index: 100;
+  overflow-y: auto;
+  padding: 32px 24px 40px;
+}
+#comparePanel.visible { display: block; }
+.compare-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; max-width: 960px; margin-left: auto; margin-right: auto;
+}
+.compare-title { font-size: 14px; font-weight: 600; color: #c9d1d9; }
+.compare-close-btn {
+  background: none; border: 1px solid #30363d; border-radius: 6px;
+  color: #8b949e; padding: 3px 10px; cursor: pointer; font-family: inherit; font-size: 12px;
+}
+.compare-close-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 960px; margin: 0 auto;
+}
+.compare-col { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; }
+.compare-col-title { font-size: 11px; font-weight: 600; color: #58a6ff; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.compare-col-title.argon2 { color: #a371f7; }
+.compare-col-desc { font-size: 11px; color: #8b949e; line-height: 1.5; margin-bottom: 10px; }
+@media (max-width: 760px) { .compare-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .compare-grid { grid-template-columns: 1fr; } }
+
+/* ── Shortcut overlay ─────────────────────────────────────────────────────── */
+#shortcutOverlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(13,17,23,0.88);
+  z-index: 101;
+  align-items: center; justify-content: center;
+}
+#shortcutOverlay.visible { display: flex; }
+.shortcut-box {
+  background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+  padding: 24px 32px; min-width: 320px; max-width: 440px;
+}
+.shortcut-box-title { font-size: 13px; font-weight: 600; color: #c9d1d9; margin-bottom: 16px; }
+.shortcut-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid #21262d; font-size: 12px;
+}
+.shortcut-row:last-child { border-bottom: none; }
+.shortcut-key {
+  background: #21262d; border: 1px solid #484f58; border-radius: 4px;
+  padding: 2px 8px; font-size: 11px; color: #c9d1d9; font-family: inherit;
+}
+.shortcut-desc { color: #8b949e; }
+.shortcut-hint { font-size: 10px; color: #484f58; margin-top: 14px; text-align: center; }
+
+/* ── Print ────────────────────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff; color: #000; height: auto; overflow: visible; }
+  .app-header, .wizard-panel, .toolbar-nav, footer, #comparePanel, #shortcutOverlay { display: none !important; }
+  .app-main { display: block; }
+  .main-panel { overflow: visible; }
+  .diagram-area { border: none; }
+  .main-body { max-width: 100%; }
+  .step-description { border: 1px solid #ccc; }
+  .formula-block { border: 1px solid #999; }
+  a[href]::after { content: ''; }
+}
 </style>
 </head>
 <body>
@@ -459,12 +531,15 @@ body {
     <button class="scenario-btn active" data-scenario="plain"    onclick="setScenario('plain')">1 · Plain Hash</button>
     <button class="scenario-btn"        data-scenario="salted"   onclick="setScenario('salted')">2 · With Salt</button>
     <button class="scenario-btn"        data-scenario="peppered" onclick="setScenario('peppered')">3 · Salt + Pepper</button>
+    <button class="scenario-btn"        data-scenario="argon2"   onclick="setScenario('argon2')">4 · Argon2id</button>
   </div>
   <div class="toolbar-nav">
     <button class="nav-btn" id="btnPrev" onclick="prevStep()">← Prev</button>
     <span class="step-counter" id="stepCounter">Step 1 of 7</span>
     <button class="nav-btn" id="btnNext" onclick="nextStep()">Next →</button>
     <button class="nav-btn reset-btn" id="btnReset" onclick="resetAll()">↺ Reset</button>
+    <button class="nav-btn" id="btnCompare" onclick="toggleCompare()">⊞ Compare</button>
+    <button class="nav-btn" id="btnPrint" onclick="window.print()">⎙ Print</button>
   </div>
 </header>
 
@@ -603,6 +678,33 @@ body {
   </div>
 
 </main>
+
+<!-- ── Compare panel ──────────────────────────────────────────────────────── -->
+<div id="comparePanel">
+  <div class="compare-header">
+    <span class="compare-title">Scenario Comparison — Step <span id="compareStepLabel">1</span></span>
+    <button class="compare-close-btn" onclick="toggleCompare()">✕ Close (Esc)</button>
+  </div>
+  <div class="compare-grid" id="compareGrid"></div>
+</div>
+
+<!-- ── Shortcut overlay ───────────────────────────────────────────────────── -->
+<div id="shortcutOverlay">
+  <div class="shortcut-box">
+    <div class="shortcut-box-title">Keyboard Shortcuts</div>
+    <div class="shortcut-row"><span class="shortcut-key">→</span><span class="shortcut-desc">Next step</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">←</span><span class="shortcut-desc">Previous step</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">1</span><span class="shortcut-desc">Plain Hash scenario</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">2</span><span class="shortcut-desc">With Salt scenario</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">3</span><span class="shortcut-desc">Salt + Pepper scenario</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">4</span><span class="shortcut-desc">Argon2id scenario</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">R</span><span class="shortcut-desc">Reset to start</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">C</span><span class="shortcut-desc">Toggle compare view</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">?</span><span class="shortcut-desc">Toggle this overlay</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">Esc</span><span class="shortcut-desc">Close overlay</span></div>
+    <div class="shortcut-hint">Press ? or Esc to dismiss</div>
+  </div>
+</div>
 
 <footer style="text-align:center;padding:0.8rem 1rem;font-size:0.7rem;color:#8b949e;background:#161b22;border-top:1px solid #30363d;">
     <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:0.4rem;flex-wrap:wrap;">
@@ -1170,6 +1272,182 @@ const STEPS = {
         { label:'OWASP: "alone, provides no additional secure characteristics"', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#peppering' },
       ]},
   ],
+
+  argon2: [
+    { tag:'register', title:'User Registers',
+      desc:'Same starting point — user submits a password. But now the server will use Argon2id instead of SHA-256. Argon2id is <strong>memory-hard</strong>: it requires gigabytes of RAM per hash attempt, making GPU-based cracking economically unfeasible.',
+      nodes:{ user:'active', server:'', db:'' },
+      us:{ dir:'right', msg:'"password123"' }, sd:{},
+      chips:['password'],
+      formula:[
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'Argon2id next'},
+      ],
+      computation:[
+        { lbl:'Received:', val:'"password123"', cls:'password' },
+        { lbl:'Next:',     val:'Argon2id — memory-hard KDF', cls:'' },
+        { lbl:'Why:',      val:'forces 64 MB RAM per attempt — kills GPU attacks', cls:'' },
+      ],
+      db: null,
+      refs:[
+        { label:'OWASP: Argon2id (recommended KDF)', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id' },
+      ]},
+
+    { tag:'register', title:'Argon2id Hashes the Password',
+      desc:'Argon2id automatically generates a unique salt, then runs the hash through many memory-filling iterations. The output encodes the algorithm, version, cost parameters, salt, and hash — all in one string.',
+      nodes:{ user:'', server:'active', db:'' },
+      us:{}, sd:{},
+      chips:['password','salt','hash'],
+      formula:[
+        {k:'salt', lbl:'auto salt', v:'random'},
+        {k:'op', v:'+'},
+        {k:'password', lbl:'password', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'Argon2id'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'output', v:'$argon2id$v=19…'},
+      ],
+      computation:[
+        { lbl:'Password:', val:'"password123"',                              cls:'password' },
+        { lbl:'Salt:',     val:'auto-generated (embedded in output)',        cls:'salt' },
+        { lbl:'Memory:',   val:'64 MB RAM consumed per hash',               cls:'' },
+        { lbl:'Output:',   val:'$argon2id$v=19$m=65536,t=3,p=4$…',         cls:'hash' },
+      ],
+      db: null,
+      refs:[
+        { label:'OWASP: Argon2id parameters', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id' },
+      ]},
+
+    { tag:'register', title:'Argon2id Hash Stored',
+      desc:'The full Argon2id output string is stored. It self-describes its parameters — no separate salt column needed. The server can re-verify any future login just from this one stored string.',
+      nodes:{ user:'', server:'active', db:'db-active' },
+      us:{}, sd:{ dir:'right', msg:'argon2 hash' },
+      chips:['hash','salt'],
+      formula:[
+        {k:'hash', lbl:'stored', v:'$argon2id$v=19…'},
+      ],
+      computation:[
+        { lbl:'Stored:',  val:'$argon2id$v=19$m=65536,t=3,p=4$<salt>$<hash>', cls:'hash' },
+        { lbl:'Salt:',    val:'embedded inside the hash string',               cls:'salt' },
+        { lbl:'Note:',    val:'parameters (memory, iterations) travel with hash', cls:'' },
+      ],
+      db:[
+        { username:'alice',   hash:'$argon2id$v=19…a1x', salt:'(embedded)', populated:true },
+        { username:'bob',     hash:'$argon2id$v=19…b2y', salt:'(embedded)', populated:true },
+        { username:'charlie', hash:'$argon2id$v=19…c3z', salt:'(embedded)', populated:true },
+      ]},
+
+    { tag:'login', title:'User Logs In',
+      desc:'User submits password. Server fetches the stored Argon2id hash string. The salt and parameters are extracted directly from the stored string — no separate lookup needed.',
+      nodes:{ user:'active', server:'active', db:'db-active' },
+      us:{ dir:'right', msg:'"password123"' }, sd:{ dir:'left', msg:'argon2 hash' },
+      chips:['password','hash'],
+      formula:[
+        {k:'password', lbl:'submitted', v:'"password123"'},
+        {k:'op', v:'+'},
+        {k:'hash', lbl:'from DB', v:'$argon2id$…'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'re-hash next'},
+      ],
+      computation:[
+        { lbl:'Received:', val:'"password123"',                   cls:'password' },
+        { lbl:'Fetched:',  val:'$argon2id$v=19… (from DB)',       cls:'hash' },
+        { lbl:'Extract:',  val:'salt + params from stored hash',  cls:'salt' },
+      ],
+      db:[
+        { username:'alice',   hash:'$argon2id$v=19…a1x', salt:'(embedded)', populated:true, highlight:true },
+        { username:'bob',     hash:'$argon2id$v=19…b2y', salt:'(embedded)', populated:true },
+        { username:'charlie', hash:'$argon2id$v=19…c3z', salt:'(embedded)', populated:true },
+      ]},
+
+    { tag:'login', title:'Server Re-Hashes and Compares',
+      desc:'Server runs the submitted password + extracted salt through Argon2id using the same parameters. This takes ~0.5 seconds intentionally. The resulting hash is compared to the stored hash.',
+      nodes:{ user:'', server:'active', db:'' },
+      us:{}, sd:{},
+      chips:['password','salt','hash','match'],
+      formula:[
+        {k:'salt', lbl:'extracted', v:'from stored'},
+        {k:'op', v:'+'},
+        {k:'password', lbl:'submitted', v:'"password123"'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'Argon2id'},
+        {k:'op', v:'→'},
+        {k:'hash', lbl:'computed', v:'$argon2id$…a1x'},
+        {k:'op', v:'=?'},
+        {k:'match', lbl:'stored', v:'$argon2id$…a1x'},
+      ],
+      computation:[
+        { lbl:'Re-hash:',  val:'Argon2id(salt + "password123")',      cls:'hash' },
+        { lbl:'Computed:', val:'$argon2id$v=19…a1x',                  cls:'hash' },
+        { lbl:'Stored:',   val:'$argon2id$v=19…a1x',                  cls:'hash' },
+        { lbl:'Match:',    val:'✓  hashes are identical',              cls:'match' },
+      ],
+      success:'Login granted — Argon2id verification passed.',
+      db:[
+        { username:'alice',   hash:'$argon2id$v=19…a1x', salt:'(embedded)', populated:true, highlight:true },
+        { username:'bob',     hash:'$argon2id$v=19…b2y', salt:'(embedded)', populated:true },
+        { username:'charlie', hash:'$argon2id$v=19…c3z', salt:'(embedded)', populated:true },
+      ]},
+
+    { tag:'login', title:'Login Granted',
+      desc:'Same result as before — access is granted. The key difference is invisible: the time cost. Argon2id\'s intentional slowness (~0.5 s) is negligible for one legitimate login, but catastrophic for an attacker trying millions.',
+      nodes:{ user:'active', server:'active', db:'db-active' },
+      us:{}, sd:{ dir:'left', msg:'✓ access granted' },
+      chips:['match'],
+      formula:[
+        {k:'match', lbl:'result', v:'✓ granted'},
+      ],
+      computation:[
+        { lbl:'Granted:',   val:'alice logged in successfully',          cls:'match' },
+        { lbl:'Time cost:', val:'~0.5 s intentional delay per attempt',  cls:'' },
+        { lbl:'To crack:',  val:'0.5 s × 10⁹ attempts ≈ 15 900 years',  cls:'' },
+      ],
+      thinkWhy:'A 0.5-second login feels instant to a human. To a GPU farm running 2 billion SHA-256 attempts per second, Argon2id turns that same attack into an economic impossibility.',
+      db:[
+        { username:'alice',   hash:'$argon2id$v=19…a1x', salt:'(embedded)', populated:true },
+        { username:'bob',     hash:'$argon2id$v=19…b2y', salt:'(embedded)', populated:true },
+        { username:'charlie', hash:'$argon2id$v=19…c3z', salt:'(embedded)', populated:true },
+      ]},
+
+    { tag:'attack', title:'Why Speed Kills — Attacker Tries Argon2id',
+      desc:'Attacker steals the database. Even with the hashes, each crack attempt costs 64 MB of RAM and 0.5 seconds on their hardware. A GPU farm that could crack SHA-256 passwords in seconds now needs centuries per user.',
+      nodes:{ user:'', server:'', db:'breach' },
+      us:{}, sd:{},
+      attacker: true,
+      chips:['breach'],
+      formula:[
+        {k:'hash', lbl:'stolen', v:'$argon2id$v=19…a1x'},
+        {k:'op', v:'→'},
+        {k:'fn', v:'crack attempt'},
+        {k:'op', v:'→'},
+        {k:'breach', lbl:'result', v:'centuries…'},
+      ],
+      computation:[
+        { lbl:'Stolen:',  val:'$argon2id$v=19… hash',                  cls:'breach' },
+        { lbl:'Per try:', val:'64 MB RAM + 0.5 s CPU time',             cls:'' },
+        { lbl:'GPU:',     val:'2 B SHA-256/s → ~2 Argon2id/s',         cls:'' },
+        { lbl:'ETA:',     val:'centuries for a single common password', cls:'breach' },
+      ],
+      db:[
+        { username:'alice',   hash:'$argon2id$v=19…a1x', salt:'(embedded)', populated:true, breach:true },
+        { username:'bob',     hash:'$argon2id$v=19…b2y', salt:'(embedded)', populated:true, breach:true },
+        { username:'charlie', hash:'$argon2id$v=19…c3z', salt:'(embedded)', populated:true, breach:true },
+      ],
+      crackBar:[
+        { lbl:'SHA-256 (plain)',       pct:100, cls:'instant', time:'< 1 second' },
+        { lbl:'SHA-256 + salt',        pct:55,  cls:'fast',    time:'hours–days' },
+        { lbl:'SHA-256 + salt+pepper', pct:5,   cls:'slow',    time:'requires 2nd breach' },
+        { lbl:'Argon2id',              pct:1,   cls:'blocked', time:'centuries' },
+      ],
+      attack:{ level:'success',
+        text:'🔒 Memory-hard hashing defeats economics. Argon2id is the OWASP #1 recommendation precisely because it weaponises time and RAM against attackers while remaining fast enough for real users.' },
+      thinkWhy:'If your password database was stolen tonight, how long would it take an attacker to crack your users\' passwords? The answer depends entirely on which algorithm you chose when you built the system.',
+      refs:[
+        { label:'OWASP: Argon2id — #1 recommended KDF', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id' },
+        { label:'OWASP: Why password hashing must be slow', url:'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#hashing-concepts' },
+      ]},
+  ],
 };
 
 // ── Formula renderer ──────────────────────────────────────────────────────────
@@ -1261,7 +1539,7 @@ function render() {
 
   // Database
   const dbEl = document.getElementById('dbContents');
-  const hasSalt = state.scenario !== 'plain';
+  const hasSalt = state.scenario !== 'plain'; // salted, peppered, argon2 all have salt column
   if (!s.db) {
     dbEl.innerHTML = '<div class="db-empty">— empty —</div>';
   } else {
@@ -1342,9 +1620,13 @@ function render() {
   }
 
   // Nav
-  document.getElementById('stepCounter').textContent = 'Step ' + (state.step + 1) + ' of 7';
+  const totalSteps = STEPS[state.scenario].length;
+  document.getElementById('stepCounter').textContent = 'Step ' + (state.step + 1) + ' of ' + totalSteps;
   document.getElementById('btnPrev').disabled = state.step === 0;
-  document.getElementById('btnNext').disabled = state.step === 6;
+  document.getElementById('btnNext').disabled = state.step === totalSteps - 1;
+
+  // Permalink — update URL hash silently
+  history.replaceState(null, '', '#' + state.scenario + '/' + state.step);
 }
 
 // ── Live hash ─────────────────────────────────────────────────────────────────
@@ -1383,14 +1665,97 @@ function setScenario(sc) {
   render();
 }
 
+// ── Compare mode ──────────────────────────────────────────────────────────────
+function toggleCompare() {
+  const panel = document.getElementById('comparePanel');
+  const showing = panel.classList.toggle('visible');
+  if (showing) renderCompare();
+}
+
+function renderCompare() {
+  const stepIdx = state.step;
+  document.getElementById('compareStepLabel').textContent = stepIdx + 1;
+  const scenarios = [
+    { key:'plain',    label:'Plain',    cls:'' },
+    { key:'salted',   label:'Salted',   cls:'' },
+    { key:'peppered', label:'Peppered', cls:'' },
+    { key:'argon2',   label:'Argon2id', cls:'argon2' },
+  ];
+  const grid = document.getElementById('compareGrid');
+  grid.innerHTML = scenarios.map(sc => {
+    const steps = STEPS[sc.key];
+    const s = steps[Math.min(stepIdx, steps.length - 1)];
+    const hasSaltCol = sc.key !== 'plain';
+    let dbHtml = '';
+    if (s.db) {
+      dbHtml = '<table class="db-table" style="font-size:10px;width:100%"><thead><tr><th>user</th><th>hash</th>' +
+        (hasSaltCol ? '<th>salt</th>' : '') + '</tr></thead><tbody>' +
+        s.db.map(row =>
+          '<tr' + (row.breach ? ' class="mass-crack"' : '') + '>' +
+          '<td>' + row.username + '</td>' +
+          '<td class="' + (row.breach ? 'breach' : 'hash-val') + '" style="word-break:break-all;max-width:80px">' + row.hash + '</td>' +
+          (hasSaltCol ? '<td class="' + (row.breach ? 'breach' : 'salt-val') + '">' + (row.salt || '—') + '</td>' : '') +
+          '</tr>'
+        ).join('') + '</tbody></table>';
+    } else {
+      dbHtml = '<div class="db-empty">— empty —</div>';
+    }
+    return '<div class="compare-col">' +
+      '<div class="compare-col-title ' + sc.cls + '">' + sc.label + '</div>' +
+      '<div class="compare-col-desc">' + (s.title || '') + '</div>' +
+      dbHtml +
+      '</div>';
+  }).join('');
+}
+
+// ── Shortcut overlay ──────────────────────────────────────────────────────────
+function toggleShortcuts() {
+  document.getElementById('shortcutOverlay').classList.toggle('visible');
+}
+
+// ── Keydown ────────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
+  // Don't fire shortcuts when typing in an input
+  if (e.target.tagName === 'INPUT') return;
+
+  const compareVisible   = document.getElementById('comparePanel').classList.contains('visible');
+  const shortcutVisible  = document.getElementById('shortcutOverlay').classList.contains('visible');
+
+  if (e.key === 'Escape') {
+    if (shortcutVisible) { document.getElementById('shortcutOverlay').classList.remove('visible'); return; }
+    if (compareVisible)  { document.getElementById('comparePanel').classList.remove('visible'); return; }
+  }
+  if (e.key === '?') { toggleShortcuts(); return; }
+  if (e.key === 'c' || e.key === 'C') { toggleCompare(); return; }
+
+  if (compareVisible || shortcutVisible) return; // don't navigate while overlay open
+
   if (e.key === 'ArrowRight') nextStep();
   if (e.key === 'ArrowLeft')  prevStep();
   if (e.key === '1') setScenario('plain');
   if (e.key === '2') setScenario('salted');
   if (e.key === '3') setScenario('peppered');
+  if (e.key === '4') setScenario('argon2');
   if (e.key === 'r' || e.key === 'R') resetAll();
 });
+
+// ── Permalink — parse URL hash on load ────────────────────────────────────────
+(function parsePermalink() {
+  const hash = location.hash.replace('#', '');
+  if (!hash) return;
+  const parts = hash.split('/');
+  const sc  = parts[0];
+  const stp = parseInt(parts[1], 10);
+  if (STEPS[sc]) {
+    state.scenario = sc;
+    document.querySelectorAll('.scenario-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.scenario === sc)
+    );
+  }
+  if (!isNaN(stp) && stp >= 0 && stp < STEPS[state.scenario].length) {
+    state.step = stp;
+  }
+})();
 
 render();
 </script>
