@@ -1434,3 +1434,208 @@ test('page has favicon link', async ({ page }) => {
   expect(icon).toBeTruthy();
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESPONSIVE / MOBILE LAYOUT TESTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Auto-detection & layout switching ───────────────────────────────────────
+test('mobile layout activates at 375px viewport width', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('.wizard-panel')).toBeHidden();
+  await expect(page.locator('#mobileNav')).toBeVisible();
+  await ctx.close();
+});
+
+test('desktop layout at 1024px has visible wizard panel', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('.wizard-panel')).toBeVisible();
+  await expect(page.locator('#mobileNav')).toBeHidden();
+  await ctx.close();
+});
+
+test('tablet layout at 768px hides wizard shows mobile nav', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 768, height: 1024 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('#mobileNav')).toBeVisible();
+  await ctx.close();
+});
+
+// ── Mobile bottom navigation ────────────────────────────────────────────────
+test('mobile nav has prev, next, and step indicator', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('#mobileNav #mobilePrev')).toBeVisible();
+  await expect(page.locator('#mobileNav #mobileNext')).toBeVisible();
+  await expect(page.locator('#mobileNav #mobileStepIndicator')).toBeVisible();
+  await ctx.close();
+});
+
+test('mobile nav next button advances step', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.click('#mobileNext');
+  await expect(page.locator('#mobileStepIndicator')).toContainText('2');
+  await ctx.close();
+});
+
+test('mobile nav prev button goes back', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.click('#mobileNext');
+  await page.click('#mobilePrev');
+  await expect(page.locator('#mobileStepIndicator')).toContainText('1');
+  await ctx.close();
+});
+
+// ── Mobile scenario switcher ────────────────────────────────────────────────
+test('mobile has scenario selector dropdown', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('#mobileScenarioSelect')).toBeVisible();
+  await ctx.close();
+});
+
+test('mobile scenario selector changes scenario', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.selectOption('#mobileScenarioSelect', 'salted');
+  await expect(page.locator('#mobileStepIndicator')).toContainText('1');
+  await ctx.close();
+});
+
+// ── Mobile step drawer ──────────────────────────────────────────────────────
+test('mobile has step list toggle button', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('#mobileStepListBtn')).toBeVisible();
+  await ctx.close();
+});
+
+test('clicking step list button shows bottom sheet with all steps', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.click('#mobileStepListBtn');
+  await expect(page.locator('#mobileStepSheet')).toBeVisible();
+  const steps = await page.locator('#mobileStepSheet .mobile-step-item').count();
+  expect(steps).toBe(8); // plain has 8 steps
+  await ctx.close();
+});
+
+test('tapping step in sheet navigates to that step', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.click('#mobileStepListBtn');
+  await page.click('#mobileStepSheet .mobile-step-item:nth-child(4)');
+  await expect(page.locator('#mobileStepIndicator')).toContainText('4');
+  await ctx.close();
+});
+
+test('bottom sheet dismisses on backdrop click', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.click('#mobileStepListBtn');
+  await expect(page.locator('#mobileStepSheet')).toBeVisible();
+  await page.click('#mobileSheetBackdrop');
+  await expect(page.locator('#mobileStepSheet')).toBeHidden();
+  await ctx.close();
+});
+
+// ── Touch targets & sizing ──────────────────────────────────────────────────
+test('mobile nav buttons are at least 44px tall', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  const height = await page.locator('#mobileNext').evaluate(el => el.getBoundingClientRect().height);
+  expect(height).toBeGreaterThanOrEqual(44);
+  await ctx.close();
+});
+
+// ── Desktop toolbar hidden on mobile ────────────────────────────────────────
+test('desktop toolbar-nav hidden on mobile', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('.toolbar-nav')).toBeHidden();
+  await ctx.close();
+});
+
+// ── Mobile menu button for toolbar actions ──────────────────────────────────
+test('mobile has hamburger menu button for extra actions', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('#mobileMenuBtn')).toBeVisible();
+  await ctx.close();
+});
+
+test('mobile menu shows compare, summary, theme, share actions', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 375, height: 667 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  await page.click('#mobileMenuBtn');
+  await expect(page.locator('#mobileMenu')).toBeVisible();
+  await expect(page.locator('#mobileMenu')).toContainText(/Compare|Summary|Theme|Share/i);
+  await ctx.close();
+});
+
+// ── Landscape compaction ────────────────────────────────────────────────────
+test('landscape mode compacts mobile nav', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 667, height: 375 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem('tourSeen', '1'));
+  await page.goto('http://localhost:3010/');
+  // In landscape, nav should still be functional but compact
+  await expect(page.locator('#mobileNav')).toBeVisible();
+  const height = await page.locator('#mobileNav').evaluate(el => el.getBoundingClientRect().height);
+  expect(height).toBeLessThan(60);
+  await ctx.close();
+});
+
+// ── Auto-switch on resize ───────────────────────────────────────────────────
+test('resizing from desktop to mobile shows mobile nav dynamically', async ({ page }) => {
+  await page.goto('/');
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('#mobileNav')).toBeHidden();
+  await page.setViewportSize({ width: 375, height: 667 });
+  await expect(page.locator('#mobileNav')).toBeVisible();
+});
+
+test('resizing from mobile to desktop shows wizard panel', async ({ page }) => {
+  await page.goto('/');
+  await page.setViewportSize({ width: 375, height: 667 });
+  await expect(page.locator('.wizard-panel')).toBeHidden();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('.wizard-panel')).toBeVisible();
+});
+
