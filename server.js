@@ -23,6 +23,7 @@ const SECURITY_HEADERS = {
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Cross-Origin-Resource-Policy': 'same-origin',
+    'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
 };
 
 createServer(async (req, res) => {
