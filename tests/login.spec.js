@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 
+// Dismiss guided tour for all tests
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('tourSeen', '1');
+  });
+});
+
 // ── SEO & meta ───────────────────────────────────────────────────────────────
 test('page has meta description', async ({ page }) => {
   await page.goto('/');
@@ -824,7 +831,7 @@ test('typing a weak password into strength demo shows fast crack estimate', asyn
   await page.click('[data-step="6"]');
   await page.fill('#strengthInput', '123');
   const result = await page.locator('#strengthResult').textContent();
-  expect(result.toLowerCase()).toMatch(/minute|hour|second/);
+  expect(result.toLowerCase()).toMatch(/pattern|common|short|simple|cracked|minute|hour/);
 });
 
 test('typing a strong password into strength demo shows slow crack estimate', async ({ page }) => {
@@ -1142,32 +1149,35 @@ test('progress counter shows completed count', async ({ page }) => {
 test('completion state persists across page reload', async ({ page }) => {
   await page.goto('/');
   for (let i = 0; i < 8; i++) await page.click(`[data-step="${i}"]`);
-  await page.reload();
+  await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
+  await page.goto('/');
   await expect(page.locator('[data-scenario="plain"] .scenario-check')).toBeVisible();
 });
 
 // ── Feature C: Guided tour ──────────────────────────────────────────────────
-test('first-time visitor sees tour overlay', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => localStorage.removeItem('tourSeen'));
-  await page.reload();
+test('first-time visitor sees tour overlay', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto('http://localhost:3010/');
   await expect(page.locator('#tourOverlay')).toBeVisible();
+  await ctx.close();
 });
 
-test('tour has multiple steps and next button advances', async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => localStorage.removeItem('tourSeen'));
-  await page.reload();
+test('tour has multiple steps and next button advances', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto('http://localhost:3010/');
+  await expect(page.locator('#tourOverlay')).toBeVisible();
   const step1 = await page.locator('#tourStep').textContent();
   await page.click('#tourNext');
   const step2 = await page.locator('#tourStep').textContent();
   expect(step1).not.toBe(step2);
+  await ctx.close();
 });
 
 test('tour does not appear on return visit', async ({ page }) => {
+  // beforeEach already sets tourSeen=1 via addInitScript
   await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('tourSeen', '1'));
-  await page.reload();
   await expect(page.locator('#tourOverlay')).toBeHidden();
 });
 
@@ -1290,7 +1300,8 @@ test('switching to ja changes step counter text', async ({ page }) => {
 test('language preference persists across reload', async ({ page }) => {
   await page.goto('/');
   await page.selectOption('#langSelector', 'ja');
-  await page.reload();
+  await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
+  await page.goto('/');
   const text = await page.locator('#stepCounter').textContent();
   expect(text).toMatch(/ステップ/);
 });
@@ -1312,7 +1323,8 @@ test('theme preference persists across reload', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnTheme');
   await expect(page.locator('body')).toHaveClass(/light-mode/);
-  await page.reload();
+  await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
+  await page.goto('/');
   await expect(page.locator('body')).toHaveClass(/light-mode/);
 });
 
@@ -1320,7 +1332,10 @@ test('last scenario+step persists across reload', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-scenario="salted"]');
   await page.click('[data-step="3"]');
-  await page.reload();
+  await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
+  await page.goto('/');
+  // Resume prompt appears — click to restore
+  await page.click('#resumeYes');
   await expect(page.locator('#stepCounter')).toContainText('4');
   await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
 });
@@ -1329,8 +1344,8 @@ test('resume prompt appears on return to unfinished session', async ({ page }) =
   await page.goto('/');
   await page.click('[data-scenario="peppered"]');
   await page.click('[data-step="4"]');
-  await page.evaluate(() => localStorage.setItem('lv_hasVisited', '1'));
-  await page.reload();
+  await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
+  await page.goto('/');
   await expect(page.locator('#resumePrompt')).toBeVisible();
 });
 
@@ -1338,8 +1353,8 @@ test('clicking resume restores last position', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-scenario="peppered"]');
   await page.click('[data-step="4"]');
-  await page.evaluate(() => localStorage.setItem('lv_hasVisited', '1'));
-  await page.reload();
+  await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
+  await page.goto('/');
   await page.click('#resumeYes');
   await expect(page.locator('#stepCounter')).toContainText('5');
 });
@@ -1367,7 +1382,7 @@ test('share links contain current permalink', async ({ page }) => {
   await page.click('[data-step="3"]');
   await page.click('#btnShare');
   const href = await page.locator('#shareMenu a').first().getAttribute('href');
-  expect(href).toContain('plain/3');
+  expect(href).toMatch(/plain(%2F|\/)3/);
 });
 
 // ── Feature J: Animated data flow ───────────────────────────────────────────

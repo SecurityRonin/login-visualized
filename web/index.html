@@ -12,6 +12,8 @@
 <meta name="twitter:title" content="Login Security Visualized">
 <meta name="twitter:description" content="Interactive password storage security visualisation — plain hash, salt, pepper, Argon2id.">
 <link rel="canonical" href="https://login-visualized.securityronin.com/">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
 <title>Login Security Visualized</title>
 <style>
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
@@ -671,6 +673,106 @@ body.light-mode .inline-section-title { color: #57606a; border-color: #d0d7de; }
 body.light-mode .step-tag.register { background: #ddf4ff; color: #0969da; }
 body.light-mode .step-tag.login    { background: #d1f8d9; color: #1a7f37; }
 body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
+
+/* ── Feature B: Progress tracker ──────────────────────────────────────────── */
+.scenario-check { display: none; font-size: 10px; margin-left: 3px; color: #3fb950; }
+.scenario-check.visible { display: inline; }
+#progressCounter { font-size: 10px; color: #8b949e; margin-left: 6px; }
+
+/* ── Feature C: Guided tour ───────────────────────────────────────────────── */
+#tourOverlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(13,17,23,0.85);
+  align-items: center; justify-content: center;
+}
+#tourOverlay.visible { display: flex; }
+.tour-box {
+  background: #161b22; border: 1px solid #58a6ff; border-radius: 10px;
+  padding: 24px 28px; max-width: 420px; text-align: center;
+}
+.tour-box h3 { color: #58a6ff; margin-bottom: 10px; font-size: 14px; }
+#tourStep { color: #c9d1d9; font-size: 12px; line-height: 1.6; margin-bottom: 16px; min-height: 48px; }
+.tour-dots { margin-bottom: 14px; }
+.tour-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #30363d; margin: 0 3px; }
+.tour-dot.active { background: #58a6ff; }
+#tourNext {
+  background: #1f6feb; border: none; color: #fff; padding: 6px 20px;
+  border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px;
+}
+#tourNext:hover { background: #388bfd; }
+
+/* ── Feature E: Dual view ─────────────────────────────────────────────────── */
+#dualPanel {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(13,17,23,0.93); overflow-y: auto; padding: 32px 24px;
+}
+#dualPanel.visible { display: block; }
+.dual-header {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 960px; margin: 0 auto 18px;
+}
+.dual-title { font-size: 14px; font-weight: 600; color: #c9d1d9; }
+.dual-close-btn {
+  background: none; border: 1px solid #30363d; border-radius: 6px;
+  color: #8b949e; padding: 3px 10px; cursor: pointer; font-family: inherit; font-size: 12px;
+}
+.dual-close-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+.dual-selectors { display: flex; gap: 12px; max-width: 960px; margin: 0 auto 14px; }
+.dual-selectors select {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 4px 10px; border-radius: 6px; font-family: inherit; font-size: 11px;
+}
+.dual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 960px; margin: 0 auto; }
+.dual-col {
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px;
+}
+.dual-col-title { font-size: 11px; font-weight: 600; color: #58a6ff; margin-bottom: 10px; text-transform: uppercase; }
+
+/* ── Feature I: Share menu ────────────────────────────────────────────────── */
+#shareMenu {
+  display: none; position: absolute; top: 100%; right: 0; z-index: 50;
+  background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+  padding: 6px 0; min-width: 160px;
+}
+#shareMenu.visible { display: block; }
+#shareMenu a {
+  display: block; padding: 6px 14px; color: #c9d1d9; text-decoration: none;
+  font-size: 11px;
+}
+#shareMenu a:hover { background: #21262d; color: #58a6ff; }
+.share-wrap { position: relative; }
+
+/* ── Feature J2: Animated particles ───────────────────────────────────────── */
+.arrow-particle {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  top: 50%; transform: translateY(-50%); pointer-events: none;
+}
+.arrow-line.active-right .arrow-particle { background: #58a6ff; animation: slideRight 1.2s ease-in-out infinite; }
+.arrow-line.active-left .arrow-particle  { background: #3fb950; animation: slideLeft  1.2s ease-in-out infinite; }
+
+/* ── Feature G: Language selector ─────────────────────────────────────────── */
+#langSelector {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 3px 6px; border-radius: 4px; font-family: inherit; font-size: 10px;
+  cursor: pointer;
+}
+
+/* ── Feature H: Resume prompt ─────────────────────────────────────────────── */
+#resumePrompt {
+  display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 150; background: #161b22; border: 1px solid #58a6ff; border-radius: 8px;
+  padding: 12px 18px; font-size: 12px; color: #c9d1d9;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+#resumePrompt.visible { display: flex; gap: 12px; align-items: center; }
+.resume-btn {
+  background: #1f6feb; border: none; color: #fff; padding: 4px 14px;
+  border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 11px;
+}
+.resume-btn.secondary { background: #21262d; border: 1px solid #30363d; color: #8b949e; }
+
+/* ── Focus outlines (a11y) ────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid #58a6ff; outline-offset: 2px; }
 </style>
 </head>
 <script type="application/ld+json">
@@ -721,30 +823,45 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
 <!-- ── Toolbar ─────────────────────────────────────────────────────────────── -->
 <header class="app-header">
   <div class="scenario-selector">
-    <button class="scenario-btn active" data-scenario="plain"    onclick="setScenario('plain')">1 · Plain Hash</button>
-    <button class="scenario-btn"        data-scenario="salted"   onclick="setScenario('salted')">2 · With Salt</button>
-    <button class="scenario-btn"        data-scenario="peppered" onclick="setScenario('peppered')">3 · Salt + Pepper</button>
-    <button class="scenario-btn"        data-scenario="argon2"   onclick="setScenario('argon2')">4 · Argon2id</button>
+    <button class="scenario-btn active" data-scenario="plain"    onclick="setScenario('plain')"><span data-i18n="sc_plain">1 · Plain Hash</span><span class="scenario-check">✓</span></button>
+    <button class="scenario-btn"        data-scenario="salted"   onclick="setScenario('salted')"><span data-i18n="sc_salted">2 · With Salt</span><span class="scenario-check">✓</span></button>
+    <button class="scenario-btn"        data-scenario="peppered" onclick="setScenario('peppered')"><span data-i18n="sc_peppered">3 · Salt + Pepper</span><span class="scenario-check">✓</span></button>
+    <button class="scenario-btn"        data-scenario="argon2"   onclick="setScenario('argon2')"><span data-i18n="sc_argon2">4 · Argon2id</span><span class="scenario-check">✓</span></button>
   </div>
   <div class="toolbar-nav">
-    <button class="nav-btn" id="btnPrev" onclick="prevStep()">← Prev</button>
+    <button class="nav-btn" id="btnPrev" aria-label="Previous step" onclick="prevStep()"><span data-i18n="prev">← Prev</span></button>
     <span class="step-counter" id="stepCounter">Step 1 of 7</span>
-    <button class="nav-btn" id="btnNext" onclick="nextStep()">Next →</button>
-    <button class="nav-btn reset-btn" id="btnReset" onclick="resetAll()">↺ Reset</button>
-    <button class="nav-btn" id="btnCompare" onclick="toggleCompare()">⊞ Compare</button>
-    <button class="nav-btn" id="btnSummary" onclick="toggleSummary()">≡ Summary</button>
-    <button class="nav-btn" id="btnCopyLink" onclick="copyLink()">⎘ Link</button>
-    <button class="nav-btn" id="btnPresent" onclick="togglePresent()">▶ Present</button>
-    <button class="nav-btn" id="btnTheme" onclick="toggleTheme()">☀ Theme</button>
-    <button class="nav-btn" id="btnPrint" onclick="window.print()">⎙ Print</button>
+    <button class="nav-btn" id="btnNext" aria-label="Next step" onclick="nextStep()"><span data-i18n="next">Next →</span></button>
+    <button class="nav-btn reset-btn" id="btnReset" aria-label="Reset to start" onclick="resetAll()"><span data-i18n="reset">↺ Reset</span></button>
+    <button class="nav-btn" id="btnCompare" aria-label="Compare scenarios" onclick="toggleCompare()">⊞ Compare</button>
+    <button class="nav-btn" id="btnSummary" aria-label="Summary table" onclick="toggleSummary()">≡ Summary</button>
+    <button class="nav-btn" id="btnDual" aria-label="Side-by-side view" onclick="toggleDual()">⧉ Dual</button>
+    <button class="nav-btn" id="btnCopyLink" aria-label="Copy link" onclick="copyLink()">⎘ Link</button>
+    <div class="share-wrap">
+      <button class="nav-btn" id="btnShare" aria-label="Share" onclick="toggleShareMenu()">↗ Share</button>
+      <div id="shareMenu"></div>
+    </div>
+    <button class="nav-btn" id="btnExport" aria-label="Export as image" onclick="exportStep()">⤓ Export</button>
+    <button class="nav-btn" id="btnNarrate" aria-label="Read aloud" onclick="narrateStep()">🔊 Narrate</button>
+    <button class="nav-btn" id="btnPresent" aria-label="Presentation mode" onclick="togglePresent()">▶ Present</button>
+    <button class="nav-btn" id="btnTheme" aria-label="Toggle theme" onclick="toggleTheme()">☀ Theme</button>
+    <button class="nav-btn" id="btnPrint" aria-label="Print" onclick="window.print()">⎙ Print</button>
+    <select id="langSelector" aria-label="Language" onchange="setLanguage(this.value)">
+      <option value="en">EN</option>
+      <option value="zh-TW">繁中</option>
+      <option value="zh-CN">简中</option>
+      <option value="fr">FR</option>
+      <option value="ja">JA</option>
+    </select>
+    <span id="progressCounter">0/4</span>
   </div>
 </header>
 
 <!-- ── Main ────────────────────────────────────────────────────────────────── -->
-<main class="app-main">
+<main class="app-main" role="main">
 
   <!-- LEFT: Wizard steps -->
-  <div class="wizard-panel" id="wizardPanel">
+  <div class="wizard-panel" id="wizardPanel" role="navigation" aria-label="Step navigation">
     <!-- populated dynamically by renderWizard() -->
   </div>
 
@@ -793,7 +910,7 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
     <div class="main-body">
 
       <!-- Step description -->
-      <div class="step-description">
+      <div class="step-description" aria-live="polite">
         <span class="step-tag" id="stepTag">REGISTER</span>
         <div id="stepText"></div>
         <div class="think-why" id="thinkWhy"></div>
@@ -949,41 +1066,52 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
 <!-- ── Feature D: Quiz panel ─────────────────────────────────────────────── -->
 <div id="quizPanel">
   <div class="quiz-box">
-    <div class="quiz-title">🎯 Check your understanding</div>
-
-    <div class="quiz-question" id="quizQ1">
-      <div class="quiz-q-text">1. Alice and Bob both use "password123". In a plain-hash database, what happens when the attacker cracks Alice's hash?</div>
-      <div class="quiz-options">
-        <label><input type="radio" name="q1" value="a"> Only Alice's account is exposed</label>
-        <label><input type="radio" name="q1" value="b"> Bob's account is also instantly exposed, because the hashes are identical</label>
-        <label><input type="radio" name="q1" value="c"> Nothing — the attacker still needs Bob's password separately</label>
-      </div>
-    </div>
-
-    <div class="quiz-question" id="quizQ2">
-      <div class="quiz-q-text">2. What does a per-user salt primarily protect against?</div>
-      <div class="quiz-options">
-        <label><input type="radio" name="q2" value="a"> Brute-force attacks using a GPU</label>
-        <label><input type="radio" name="q2" value="b"> Rainbow tables and simultaneous exposure of shared passwords</label>
-        <label><input type="radio" name="q2" value="c"> An attacker who has access to both the database and the application server</label>
-      </div>
-    </div>
-
-    <div class="quiz-question" id="quizQ3">
-      <div class="quiz-q-text">3. Why does Argon2id make offline cracking so expensive?</div>
-      <div class="quiz-options">
-        <label><input type="radio" name="q3" value="a"> It encrypts the hash with a secret key</label>
-        <label><input type="radio" name="q3" value="b"> Each attempt consumes a configurable amount of RAM (≥ 64 MiB) and CPU time, making GPU-parallel cracking economically infeasible</label>
-        <label><input type="radio" name="q3" value="c"> It stores the hash across multiple servers</label>
-      </div>
-    </div>
-
-    <div id="quizScore"></div>
-    <div class="quiz-footer">
-      <button class="quiz-btn" id="btnQuizSubmit" onclick="submitQuiz()">Submit answers</button>
-      <button class="quiz-btn" id="btnQuizClose" onclick="closeQuiz()">Close</button>
-    </div>
+    <!-- populated dynamically by openQuiz() -->
   </div>
+</div>
+
+<!-- ── Feature E: Dual view panel ────────────────────────────────────────── -->
+<div id="dualPanel">
+  <div class="dual-header">
+    <span class="dual-title">Side-by-Side Comparison</span>
+    <button class="dual-close-btn" onclick="toggleDual()">✕ Close</button>
+  </div>
+  <div class="dual-selectors">
+    <select id="dualLeft" onchange="renderDual()">
+      <option value="plain">Plain</option>
+      <option value="salted">Salted</option>
+      <option value="peppered">Peppered</option>
+      <option value="argon2">Argon2id</option>
+    </select>
+    <span style="color:#8b949e">vs</span>
+    <select id="dualRight" onchange="renderDual()">
+      <option value="plain">Plain</option>
+      <option value="salted" selected>Salted</option>
+      <option value="peppered">Peppered</option>
+      <option value="argon2">Argon2id</option>
+    </select>
+  </div>
+  <div class="dual-grid" id="dualGrid">
+    <div class="dual-col" id="dualColLeft"></div>
+    <div class="dual-col" id="dualColRight"></div>
+  </div>
+</div>
+
+<!-- ── Feature C: Guided tour ────────────────────────────────────────────── -->
+<div id="tourOverlay">
+  <div class="tour-box">
+    <h3>👋 Welcome to Login Security Visualized</h3>
+    <div id="tourStep"></div>
+    <div class="tour-dots" id="tourDots"></div>
+    <button id="tourNext">Next</button>
+  </div>
+</div>
+
+<!-- ── Feature H: Resume prompt ──────────────────────────────────────────── -->
+<div id="resumePrompt">
+  <span>Resume where you left off?</span>
+  <button class="resume-btn" id="resumeYes" onclick="doResume()">Resume</button>
+  <button class="resume-btn secondary" id="resumeNo" onclick="dismissResume()">Start fresh</button>
 </div>
 
 <footer style="text-align:center;padding:0.8rem 1rem;font-size:0.7rem;color:#8b949e;background:#161b22;border-top:1px solid #30363d;">
@@ -1849,12 +1977,17 @@ function render() {
     const head = document.getElementById(headId);
     const msg  = document.getElementById(msgId);
     line.className = 'arrow-line';
+    line.innerHTML = ''; // remove old particles
     head.className = 'arrow-head right';
     msg.textContent = '';
     if (!data || !data.dir) return;
     line.classList.add(data.dir === 'right' ? 'active-right' : 'active-left');
     head.className = 'arrow-head ' + data.dir;
     msg.textContent = data.msg || '';
+    // Feature J: add animated particle
+    const p = document.createElement('span');
+    p.className = 'arrow-particle';
+    line.appendChild(p);
   }
   applyArrow('lineUS','headUS','msgUS', s.us);
   applyArrow('lineSD','headSD','msgSD', s.sd);
@@ -2014,13 +2147,25 @@ function render() {
     bcValue.textContent = '0';
   }
 
-  // Feature D: Quiz button — show on last attack step of plain (step index 6)
+  // Feature D: Quiz button — show on last attack step of each scenario
   const quizBtn = document.getElementById('btnQuiz');
-  if (state.scenario === 'plain' && state.step === STEPS.plain.length - 1) {
+  const isLastStep = state.step === STEPS[state.scenario].length - 1;
+  if (isLastStep && s.tag === 'attack') {
     quizBtn.classList.add('visible');
   } else {
     quizBtn.classList.remove('visible');
   }
+
+  // Feature B: Track step visit + Feature H: Save state
+  trackVisit();
+  saveState();
+
+  // Feature G: i18n step counter
+  document.getElementById('stepCounter').textContent = t('step') + ' ' + (state.step + 1) + ' ' + t('of') + ' ' + totalSteps;
+  document.getElementById('stepTag').textContent = t(s.tag);
+
+  // Feature E2: Update dual view if open
+  if (document.getElementById('dualPanel').classList.contains('visible')) renderDual();
 }
 
 // ── Live hash ─────────────────────────────────────────────────────────────────
@@ -2178,28 +2323,7 @@ function stopPresent() {
 // ── Feature J: Theme toggle ───────────────────────────────────────────────────
 function toggleTheme() {
   document.body.classList.toggle('light-mode');
-}
-
-// ── Feature D: Quiz ───────────────────────────────────────────────────────────
-function openQuiz() {
-  document.getElementById('quizScore').classList.remove('visible');
-  document.getElementById('quizScore').textContent = '';
-  document.querySelectorAll('#quizPanel input[type="radio"]').forEach(r => { r.checked = false; });
-  document.getElementById('quizPanel').classList.add('visible');
-}
-function closeQuiz() {
-  document.getElementById('quizPanel').classList.remove('visible');
-}
-function submitQuiz() {
-  const answers = { q1: 'b', q2: 'b', q3: 'b' };
-  let correct = 0;
-  Object.entries(answers).forEach(([q, ans]) => {
-    const sel = document.querySelector('#quizPanel input[name="' + q + '"]:checked');
-    if (sel && sel.value === ans) correct++;
-  });
-  const score = document.getElementById('quizScore');
-  score.textContent = 'Score: ' + correct + ' / 3' + (correct === 3 ? ' — Perfect!' : correct >= 2 ? ' — Good!' : ' — Review the steps above.');
-  score.classList.add('visible');
+  localStorage.setItem('lv_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
 }
 
 // ── Feature E: Breach counter animation ──────────────────────────────────────
@@ -2215,36 +2339,6 @@ function animateCounter(el, target, duration) {
   }
   requestAnimationFrame(step);
 }
-
-// ── Feature B: Password strength estimation ───────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {}, false);
-(function setupStrengthDemo() {
-  const input = document.getElementById('strengthInput');
-  if (!input) return;
-  input.addEventListener('input', function() {
-    const pw = this.value;
-    const result = document.getElementById('strengthResult');
-    if (!pw) { result.textContent = 'Enter a password above'; result.className = 'strength-result'; return; }
-    // Rough entropy estimate: charset size ^ length
-    let cs = 0;
-    if (/[a-z]/.test(pw)) cs += 26;
-    if (/[A-Z]/.test(pw)) cs += 26;
-    if (/[0-9]/.test(pw)) cs += 10;
-    if (/[^a-zA-Z0-9]/.test(pw)) cs += 32;
-    if (cs === 0) cs = 26;
-    const combinations = Math.pow(cs, pw.length);
-    // Argon2id: ~2 attempts/sec on consumer GPU
-    const secondsArgon = combinations / 2;
-    let timeStr, cls;
-    if (secondsArgon < 3600)       { timeStr = 'minutes to hours';    cls = 'crack-fast'; }
-    else if (secondsArgon < 86400) { timeStr = 'hours to days';       cls = 'crack-fast'; }
-    else if (secondsArgon < 3.15e7){ timeStr = 'days to months';      cls = 'crack-fast'; }
-    else if (secondsArgon < 3.15e9){ timeStr = 'years to decades';    cls = 'crack-slow'; }
-    else                           { timeStr = 'centuries or more';   cls = 'crack-slow'; }
-    result.innerHTML = 'Argon2id crack estimate: <span class="' + cls + '">' + timeStr + '</span>';
-    result.className = 'strength-result';
-  });
-})();
 
 // ── Feature I: Touch / swipe gestures ────────────────────────────────────────
 (function setupSwipe() {
@@ -2264,6 +2358,383 @@ document.addEventListener('DOMContentLoaded', () => {}, false);
   }, { passive: true });
 })();
 
+// ── Feature G: i18n ───────────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    step: 'Step', of: 'of', prev: '← Prev', next: 'Next →', reset: '↺ Reset',
+    sc_plain: '1 · Plain Hash', sc_salted: '2 · With Salt', sc_peppered: '3 · Salt + Pepper', sc_argon2: '4 · Argon2id',
+    register: 'REGISTER', login: 'LOGIN', attack: 'ATTACK',
+    database: 'Database', attack_outcome: 'Attack Outcome', owasp_refs: 'OWASP References',
+    tour_steps: [
+      'This sidebar shows each step of the login process — from registration through attack.',
+      'Switch between four scenarios to see how salting, peppering, and Argon2id improve security.',
+      'Click Next or use arrow keys to walk through each step. The diagram updates in real time.',
+      'On attack steps, you will see how an attacker exploits each approach — and why stronger methods matter.'
+    ],
+    tour_done: 'Got it!',
+  },
+  'zh-TW': {
+    step: '步驟', of: '/', prev: '← 上一步', next: '下一步 →', reset: '↺ 重置',
+    sc_plain: '1 · 純雜湊', sc_salted: '2 · 加鹽', sc_peppered: '3 · 鹽 + 胡椒', sc_argon2: '4 · Argon2id',
+    register: '註冊', login: '登入', attack: '攻擊',
+    database: '資料庫', attack_outcome: '攻擊結果', owasp_refs: 'OWASP 參考資料',
+    tour_steps: [
+      '左側邊欄顯示登入流程的每個步驟——從註冊到攻擊。',
+      '切換四種情境，了解加鹽、加胡椒和 Argon2id 如何提升安全性。',
+      '按「下一步」或使用方向鍵逐步瀏覽。圖表會即時更新。',
+      '在攻擊步驟中，您將看到攻擊者如何利用每種方法——以及為什麼更強的方法很重要。'
+    ],
+    tour_done: '了解！',
+  },
+  'zh-CN': {
+    step: '步骤', of: '/', prev: '← 上一步', next: '下一步 →', reset: '↺ 重置',
+    sc_plain: '1 · 纯哈希', sc_salted: '2 · 加盐', sc_peppered: '3 · 盐 + 胡椒', sc_argon2: '4 · Argon2id',
+    register: '注册', login: '登录', attack: '攻击',
+    database: '数据库', attack_outcome: '攻击结果', owasp_refs: 'OWASP 参考资料',
+    tour_steps: [
+      '左侧边栏显示登录流程的每个步骤——从注册到攻击。',
+      '切换四种场景，了解加盐、加胡椒和 Argon2id 如何提升安全性。',
+      '点击「下一步」或使用方向键逐步浏览。图表会实时更新。',
+      '在攻击步骤中，您将看到攻击者如何利用每种方法——以及为什么更强的方法很重要。'
+    ],
+    tour_done: '了解！',
+  },
+  fr: {
+    step: 'Étape', of: 'sur', prev: '← Précédent', next: 'Suivant →', reset: '↺ Réinitialiser',
+    sc_plain: '1 · Hash simple', sc_salted: '2 · Salé', sc_peppered: '3 · Sel + Poivre', sc_argon2: '4 · Argon2id',
+    register: 'INSCRIPTION', login: 'CONNEXION', attack: 'ATTAQUE',
+    database: 'Base de données', attack_outcome: 'Résultat de l\'attaque', owasp_refs: 'Références OWASP',
+    tour_steps: [
+      'Cette barre latérale montre chaque étape du processus de connexion — de l\'inscription à l\'attaque.',
+      'Basculez entre quatre scénarios pour voir comment le salage, le poivrage et Argon2id améliorent la sécurité.',
+      'Cliquez sur Suivant ou utilisez les touches fléchées. Le diagramme se met à jour en temps réel.',
+      'Lors des étapes d\'attaque, vous verrez comment un attaquant exploite chaque approche — et pourquoi des méthodes plus fortes comptent.'
+    ],
+    tour_done: 'Compris !',
+  },
+  ja: {
+    step: 'ステップ', of: '/', prev: '← 前へ', next: '次へ →', reset: '↺ リセット',
+    sc_plain: '1 · プレーンハッシュ', sc_salted: '2 · ソルト付き', sc_peppered: '3 · ソルト＋ペッパー', sc_argon2: '4 · Argon2id',
+    register: '登録', login: 'ログイン', attack: '攻撃',
+    database: 'データベース', attack_outcome: '攻撃結果', owasp_refs: 'OWASP 参考文献',
+    tour_steps: [
+      'サイドバーはログインプロセスの各ステップを表示します——登録から攻撃まで。',
+      '4つのシナリオを切り替えて、ソルト、ペッパー、Argon2idがセキュリティをどう向上させるか確認しましょう。',
+      '「次へ」をクリックするか矢印キーを使って各ステップを進みます。図はリアルタイムで更新されます。',
+      '攻撃ステップでは、攻撃者が各手法をどのように悪用するか——そしてなぜより強力な手法が重要かが分かります。'
+    ],
+    tour_done: '了解！',
+  },
+};
+let currentLang = 'en';
+
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key; }
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('lv_lang', lang);
+  document.getElementById('langSelector').value = lang;
+  // Update i18n spans
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
+    else if (I18N.en[key]) el.textContent = I18N.en[key];
+  });
+  // Re-render step counter
+  const totalSteps = STEPS[state.scenario].length;
+  document.getElementById('stepCounter').textContent = t('step') + ' ' + (state.step + 1) + ' ' + t('of') + ' ' + totalSteps;
+  // Update step tag
+  const s = STEPS[state.scenario][state.step];
+  document.getElementById('stepTag').textContent = t(s.tag);
+}
+
+// ── Feature A+: Scenario-specific quiz questions ──────────────────────────────
+const QUIZ_DATA = {
+  plain: {
+    questions: [
+      { q: 'Alice and Bob both use "password123". In a plain-hash database, what happens when the attacker cracks Alice\'s hash?',
+        options: ['Only Alice\'s account is exposed', 'Bob\'s account is also instantly exposed, because the hashes are identical', 'Nothing — the attacker still needs Bob\'s password separately'],
+        answer: 1 },
+      { q: 'What does a per-user salt primarily protect against?',
+        options: ['Brute-force attacks using a GPU', 'Rainbow tables and simultaneous exposure of shared passwords', 'An attacker who has access to both the database and the application server'],
+        answer: 1 },
+      { q: 'Why does Argon2id make offline cracking so expensive?',
+        options: ['It encrypts the hash with a secret key', 'Each attempt consumes configurable RAM (≥ 64 MiB) and CPU time, making GPU-parallel cracking infeasible', 'It stores the hash across multiple servers'],
+        answer: 1 },
+    ]
+  },
+  salted: {
+    questions: [
+      { q: 'Two users both choose "password123". With per-user salt, what can the attacker observe?',
+        options: ['The hashes are identical — same password, same hash', 'The hashes are completely different — the attacker cannot tell they share a password', 'Only the salt values are different, the hash is the same'],
+        answer: 1 },
+      { q: 'A rainbow table is precomputed for unsalted SHA-256. If salt is added, why does the rainbow table fail?',
+        options: ['The salt encrypts the password', 'Each user\'s salt creates a unique hash, requiring a separate table for each salt value', 'The rainbow table cannot read salted databases'],
+        answer: 1 },
+      { q: 'Salt prevents rainbow tables. What threat remains?',
+        options: ['Nothing — salt provides complete protection', 'Per-user GPU brute force — SHA-256 is still fast enough for billions of guesses per second', 'The attacker can guess the salt value'],
+        answer: 1 },
+    ]
+  },
+  peppered: {
+    questions: [
+      { q: 'What is the key difference between a salt and a pepper?',
+        options: ['Salt is random, pepper is fixed', 'Salt is stored with the hash, pepper is stored separately (not in the database)', 'Pepper is longer than salt'],
+        answer: 1 },
+      { q: 'If an attacker breaches only the database, what do they have?',
+        options: ['Hash, salt, and pepper', 'Hash and salt, but NOT the pepper — they cannot reconstruct the hash input', 'Only the hash — salt and pepper are both stored elsewhere'],
+        answer: 1 },
+      { q: 'What is the main limitation of the pepper model?',
+        options: ['Pepper slows down legitimate logins', 'If the attacker also breaches the application server, the pepper is exposed', 'Pepper makes the hash irreversible'],
+        answer: 1 },
+    ]
+  },
+  argon2: {
+    questions: [
+      { q: 'Why is "memory-hard" critical for Argon2id\'s defence?',
+        options: ['It encrypts the password in RAM', 'Each hash attempt requires configurable RAM (≥ 64 MiB), preventing GPU farms from running thousands of parallel attempts', 'Memory-hard means the hash is stored in memory instead of on disk'],
+        answer: 1 },
+      { q: 'A GPU farm cracks SHA-256 at 10 billion hashes/sec. With Argon2id, how many attempts per GPU?',
+        options: ['Still billions — GPU speed is unchanged', 'About 2 per second — each attempt needs dedicated RAM and CPU time', 'Zero — GPUs cannot run Argon2id at all'],
+        answer: 1 },
+      { q: 'What makes Argon2id the OWASP-recommended choice?',
+        options: ['It uses the longest hash output', 'Tunable memory, time, and parallelism parameters that can be raised as hardware improves', 'It was designed by the largest tech company'],
+        answer: 1 },
+    ]
+  }
+};
+
+function closeQuiz() {
+  document.getElementById('quizPanel').classList.remove('visible');
+}
+
+function openQuiz() {
+  const data = QUIZ_DATA[state.scenario] || QUIZ_DATA.plain;
+  const panel = document.getElementById('quizPanel');
+  const box = panel.querySelector('.quiz-box');
+  let html = '<div class="quiz-title">🎯 Check your understanding</div>';
+  data.questions.forEach((q, i) => {
+    html += '<div class="quiz-question" id="quizQ' + (i+1) + '">';
+    html += '<div class="quiz-q-text">' + (i+1) + '. ' + q.q + '</div>';
+    html += '<div class="quiz-options">';
+    q.options.forEach((opt, j) => {
+      html += '<label><input type="radio" name="q' + (i+1) + '" value="' + j + '"> ' + opt + '</label>';
+    });
+    html += '</div></div>';
+  });
+  html += '<div id="quizScore"></div>';
+  html += '<div class="quiz-footer">';
+  html += '<button class="quiz-btn" id="btnQuizSubmit" onclick="submitQuiz()">Submit answers</button>';
+  html += '<button class="quiz-btn" id="btnQuizClose" onclick="closeQuiz()">Close</button>';
+  html += '</div>';
+  box.innerHTML = html;
+  panel.classList.add('visible');
+}
+
+function submitQuiz() {
+  const data = QUIZ_DATA[state.scenario] || QUIZ_DATA.plain;
+  let correct = 0;
+  data.questions.forEach((q, i) => {
+    const sel = document.querySelector('#quizPanel input[name="q' + (i+1) + '"]:checked');
+    if (sel && parseInt(sel.value) === q.answer) correct++;
+  });
+  const score = document.getElementById('quizScore');
+  const total = data.questions.length;
+  score.textContent = 'Score: ' + correct + ' / ' + total + (correct === total ? ' — Perfect!' : correct >= total - 1 ? ' — Good!' : ' — Review the steps above.');
+  score.classList.add('visible');
+  // Save score
+  const scores = JSON.parse(localStorage.getItem('lv_quizScores') || '{}');
+  scores[state.scenario] = correct;
+  localStorage.setItem('lv_quizScores', JSON.stringify(scores));
+}
+
+// ── Feature B: Scenario progress tracker ──────────────────────────────────────
+const visited = JSON.parse(localStorage.getItem('lv_visited') || '{}');
+function trackVisit() {
+  if (!visited[state.scenario]) visited[state.scenario] = {};
+  visited[state.scenario][state.step] = true;
+  localStorage.setItem('lv_visited', JSON.stringify(visited));
+  updateProgress();
+}
+function updateProgress() {
+  let completed = 0;
+  ['plain','salted','peppered','argon2'].forEach(sc => {
+    const total = STEPS[sc].length;
+    const seen = visited[sc] ? Object.keys(visited[sc]).length : 0;
+    const done = seen >= total;
+    if (done) completed++;
+    const btn = document.querySelector('[data-scenario="' + sc + '"] .scenario-check');
+    if (btn) btn.classList.toggle('visible', done);
+  });
+  document.getElementById('progressCounter').textContent = completed + '/4';
+}
+
+// ── Feature C: Guided tour ────────────────────────────────────────────────────
+const TOUR_STEPS_DATA = () => t('tour_steps') || I18N.en.tour_steps;
+let tourIdx = 0;
+const _initialHash = location.hash;
+function showTour() {
+  if (localStorage.getItem('tourSeen') || _initialHash) return;
+  const overlay = document.getElementById('tourOverlay');
+  overlay.classList.add('visible');
+  tourIdx = 0;
+  renderTourStep();
+}
+function renderTourStep() {
+  const steps = TOUR_STEPS_DATA();
+  document.getElementById('tourStep').textContent = steps[tourIdx];
+  document.getElementById('tourDots').innerHTML = steps.map((_, i) =>
+    '<span class="tour-dot' + (i === tourIdx ? ' active' : '') + '"></span>'
+  ).join('');
+  const btn = document.getElementById('tourNext');
+  btn.textContent = tourIdx === steps.length - 1 ? (t('tour_done') || 'Got it!') : 'Next';
+}
+document.getElementById('tourNext').addEventListener('click', () => {
+  const steps = TOUR_STEPS_DATA();
+  if (tourIdx < steps.length - 1) {
+    tourIdx++;
+    renderTourStep();
+  } else {
+    document.getElementById('tourOverlay').classList.remove('visible');
+    localStorage.setItem('tourSeen', '1');
+  }
+});
+
+// ── Feature E: Dual view ──────────────────────────────────────────────────────
+function toggleDual() {
+  const panel = document.getElementById('dualPanel');
+  panel.classList.toggle('visible');
+  if (panel.classList.contains('visible')) renderDual();
+}
+function renderDual() {
+  const leftSc = document.getElementById('dualLeft').value;
+  const rightSc = document.getElementById('dualRight').value;
+  const step = Math.min(state.step, STEPS[leftSc].length - 1, STEPS[rightSc].length - 1);
+  renderDualCol('dualColLeft', leftSc, step);
+  renderDualCol('dualColRight', rightSc, step);
+}
+function renderDualCol(colId, sc, stepIdx) {
+  const s = STEPS[sc][stepIdx];
+  const col = document.getElementById(colId);
+  let html = '<div class="dual-col-title">' + sc + ' — ' + s.title + '</div>';
+  html += '<div style="font-size:11px;color:#c9d1d9;margin-bottom:8px">' + (s.desc || '') + '</div>';
+  if (s.formula) html += renderFormula(s.formula);
+  if (s.attack) html += '<div class="attack-outcome ' + s.attack.level + '" style="margin-top:8px;font-size:10px">' + s.attack.text + '</div>';
+  col.innerHTML = html;
+}
+
+// ── Feature I: Export / Share ─────────────────────────────────────────────────
+function exportStep() {
+  const el = document.querySelector('.main-panel');
+  // Use canvas to capture a screenshot-like export
+  const canvas = document.createElement('canvas');
+  const rect = el.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, rect.width, rect.height);
+  ctx.fillStyle = '#c9d1d9';
+  ctx.font = '14px monospace';
+  ctx.fillText('Login Security Visualized', 20, 30);
+  ctx.font = '12px monospace';
+  const s = STEPS[state.scenario][state.step];
+  ctx.fillText(state.scenario + ' — Step ' + (state.step + 1) + ': ' + s.title, 20, 54);
+  ctx.font = '11px monospace';
+  const lines = (s.desc || '').replace(/<[^>]+>/g, '').match(/.{1,80}/g) || [];
+  lines.forEach((line, i) => ctx.fillText(line, 20, 80 + i * 16));
+  const link = document.createElement('a');
+  link.download = 'login-visualized-' + state.scenario + '-step' + (state.step + 1) + '.png';
+  link.href = canvas.toDataURL();
+  link.click();
+}
+
+function toggleShareMenu() {
+  const menu = document.getElementById('shareMenu');
+  const url = encodeURIComponent(location.origin + location.pathname + '#' + state.scenario + '/' + state.step);
+  const text = encodeURIComponent('Login Security Visualized — ' + state.scenario + ' step ' + (state.step + 1));
+  menu.innerHTML =
+    '<a href="https://wa.me/?text=' + text + '%20' + url + '" target="_blank" rel="noopener">WhatsApp</a>' +
+    '<a href="https://t.me/share/url?url=' + url + '&text=' + text + '" target="_blank" rel="noopener">Telegram</a>';
+  menu.classList.toggle('visible');
+}
+
+// ── Feature K: Step narration ─────────────────────────────────────────────────
+function narrateStep() {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const s = STEPS[state.scenario][state.step];
+  const text = (s.desc || '').replace(/<[^>]+>/g, '');
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.9;
+  window.speechSynthesis.speak(utter);
+}
+
+// ── Feature D: zxcvbn-lite password strength ──────────────────────────────────
+const COMMON_PASSWORDS = ['password','123456','12345678','qwerty','abc123','monkey','1234567',
+  'letmein','trustno1','dragon','baseball','iloveyou','master','sunshine','ashley',
+  'bailey','passw0rd','shadow','123123','654321','superman','qazwsx','michael',
+  'football','password1','password123','welcome','jesus','ninja','mustang',
+  'qwerty123','admin','login','starwars','hello','charlie','donald','princess'];
+const KEYBOARD_PATTERNS = ['qwerty','qwertz','azerty','asdfgh','zxcvbn','1234567890',
+  '0987654321','qazwsx','wsxedc','rfvtgb'];
+
+function zxcvbnLite(pw) {
+  if (!pw) return { score: 0, feedback: '' };
+  const lower = pw.toLowerCase();
+  // Check common passwords
+  if (COMMON_PASSWORDS.includes(lower)) {
+    return { score: 0, feedback: 'This is a very common dictionary password — cracked instantly.' };
+  }
+  // Check keyboard patterns
+  for (const pat of KEYBOARD_PATTERNS) {
+    if (lower.includes(pat.slice(0, 4)) || pat.includes(lower.slice(0, 4))) {
+      return { score: 1, feedback: 'This contains a common keyboard pattern — easily guessable.' };
+    }
+  }
+  // Check repeated characters
+  if (/^(.)\1+$/.test(pw)) {
+    return { score: 0, feedback: 'Repeated characters provide no real entropy.' };
+  }
+  // Entropy estimate
+  let cs = 0;
+  if (/[a-z]/.test(pw)) cs += 26;
+  if (/[A-Z]/.test(pw)) cs += 26;
+  if (/[0-9]/.test(pw)) cs += 10;
+  if (/[^a-zA-Z0-9]/.test(pw)) cs += 32;
+  if (cs === 0) cs = 26;
+  const entropy = Math.log2(Math.pow(cs, pw.length));
+  const secondsArgon = Math.pow(cs, pw.length) / 2;
+  if (entropy < 28) return { score: 0, feedback: 'Too short and simple — cracked in minutes to hours.' };
+  if (entropy < 40) return { score: 1, feedback: 'Moderate — cracked in hours to days with Argon2id.' };
+  if (entropy < 60) return { score: 2, feedback: 'Good — would take years to decades with Argon2id.' };
+  return { score: 3, feedback: 'Strong — would take centuries or more to crack with Argon2id.' };
+}
+
+// Replace strength input handler with zxcvbn-lite
+(function setupStrengthDemo() {
+  const input = document.getElementById('strengthInput');
+  if (!input) return;
+  // Remove previous listener by replacing element
+  const newInput = input.cloneNode(true);
+  input.parentNode.replaceChild(newInput, input);
+  newInput.addEventListener('input', function() {
+    const pw = this.value;
+    const result = document.getElementById('strengthResult');
+    if (!pw) { result.textContent = 'Enter a password above'; result.className = 'strength-result'; return; }
+    const analysis = zxcvbnLite(pw);
+    const cls = analysis.score <= 1 ? 'crack-fast' : 'crack-slow';
+    result.innerHTML = '<span class="' + cls + '">' + analysis.feedback + '</span>';
+  });
+})();
+
+// ── Feature H: localStorage persistence ───────────────────────────────────────
+function saveState() {
+  localStorage.setItem('lv_scenario', state.scenario);
+  localStorage.setItem('lv_step', state.step);
+}
+
 // ── Permalink — parse URL hash on load ────────────────────────────────────────
 (function parsePermalink() {
   const hash = location.hash.replace('#', '');
@@ -2282,8 +2753,60 @@ document.addEventListener('DOMContentLoaded', () => {}, false);
   }
 })();
 
+// ── Init: apply saved preferences ─────────────────────────────────────────────
+(function initPersistence() {
+  // Theme
+  const savedTheme = localStorage.getItem('lv_theme');
+  if (savedTheme === 'light') document.body.classList.add('light-mode');
+
+  // Language
+  const savedLang = localStorage.getItem('lv_lang');
+  if (savedLang && I18N[savedLang]) {
+    currentLang = savedLang;
+    document.getElementById('langSelector').value = savedLang;
+  }
+
+  // Resume prompt — show if returning visitor with a saved position
+  const hasVisited = localStorage.getItem('lv_hasVisited');
+  const savedSc = localStorage.getItem('lv_scenario');
+  const savedStep = localStorage.getItem('lv_step');
+  if (hasVisited && savedSc && savedStep && !location.hash) {
+    // Show resume prompt
+    const rp = document.getElementById('resumePrompt');
+    rp.classList.add('visible');
+    window._resumeData = { sc: savedSc, step: parseInt(savedStep, 10) };
+  }
+  localStorage.setItem('lv_hasVisited', '1');
+})();
+
+function doResume() {
+  const d = window._resumeData;
+  if (d && STEPS[d.sc]) {
+    state.scenario = d.sc;
+    state.step = Math.min(d.step, STEPS[d.sc].length - 1);
+    document.querySelectorAll('.scenario-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.scenario === d.sc)
+    );
+    renderWizard();
+    render();
+  }
+  document.getElementById('resumePrompt').classList.remove('visible');
+}
+function dismissResume() {
+  document.getElementById('resumePrompt').classList.remove('visible');
+}
+
 renderWizard();
 render();
+
+// Apply language after initial render
+if (currentLang !== 'en') setLanguage(currentLang);
+
+// Update progress on load
+updateProgress();
+
+// Show guided tour for first-time visitors
+showTour();
 
 // ── Feature M: Service worker registration ────────────────────────────────────
 if ('serviceWorker' in navigator) {
