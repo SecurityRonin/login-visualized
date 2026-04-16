@@ -1639,3 +1639,96 @@ test('resizing from mobile to desktop shows wizard panel', async ({ page }) => {
   await expect(page.locator('.wizard-panel')).toBeVisible();
 });
 
+// ── RED: new design — scenario dropdown in diagram area ──────────────────────
+test('scenario selector is a dropdown inside diagram area', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.diagram-area #scenarioSelect')).toBeVisible();
+});
+
+test('scenario dropdown has exactly 4 options', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#scenarioSelect option')).toHaveCount(4);
+});
+
+test('selecting scenario from dropdown changes active scenario', async ({ page }) => {
+  await page.goto('/');
+  await page.selectOption('#scenarioSelect', 'salted');
+  await expect(page.locator('#scenarioSelect')).toHaveValue('salted');
+});
+
+test('compare button is inside diagram area', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.diagram-area #btnCompare')).toBeVisible();
+});
+
+// ── RED: inline compare mode ─────────────────────────────────────────────────
+test('compare mode is inline (right column appears, no fullscreen overlay)', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#compareRight')).toBeVisible();
+  await expect(page.locator('#comparePanel')).not.toBeVisible();
+});
+
+test('right compare column has its own scenario dropdown', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#compareScenarioRight')).toBeVisible();
+});
+
+test('no-compare button is visible in right column when comparing', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#btnNoCompare')).toBeVisible();
+});
+
+test('no-compare button exits compare mode', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnCompare');
+  await expect(page.locator('#compareRight')).toBeVisible();
+  await page.click('#btnNoCompare');
+  await expect(page.locator('#compareRight')).not.toBeVisible();
+});
+
+// ── RED: share/theme/lang emoji buttons in header ────────────────────────────
+test('share button is inside app-header', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.app-header #btnShare')).toBeVisible();
+});
+
+test('theme button is inside app-header', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.app-header #btnTheme')).toBeVisible();
+});
+
+test('language selector is inside app-header', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.app-header #langSelector')).toBeVisible();
+});
+
+test('share menu includes copy link option', async ({ page }) => {
+  await page.goto('/');
+  await page.click('#btnShare');
+  await expect(page.locator('#shareMenu')).toContainText(/copy link/i);
+});
+
+// ── RED: removed features ────────────────────────────────────────────────────
+test('narrate button does not exist', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnNarrate')).toHaveCount(0);
+});
+
+test('summary button does not exist', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnSummary')).toHaveCount(0);
+});
+
+test('dual button does not exist', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#btnDual')).toHaveCount(0);
+});
+
+test('old scenario toggle buttons are removed', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.scenario-btn')).toHaveCount(0);
+});
+
