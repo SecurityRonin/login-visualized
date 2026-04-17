@@ -113,9 +113,8 @@ body {
 .main-panel {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
-  align-items: center;
 }
 .diagram-area {
   width: 100%;
@@ -864,6 +863,53 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
 #shareMenu a:hover { background: #21262d; color: #58a6ff; }
 .share-wrap { position: relative; }
 
+/* ── Scenario bar (in diagram-area) ───────────────────────────────────────── */
+.scenario-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: 580px; gap: 8px;
+}
+#scenarioSelect {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 4px 10px; border-radius: 6px; font-family: inherit; font-size: 12px;
+  cursor: pointer; flex: 1; min-width: 0;
+}
+#scenarioSelect:focus { border-color: #58a6ff; outline: none; }
+
+/* ── Header utility buttons ────────────────────────────────────────────────── */
+.header-utils {
+  display: flex; align-items: center; gap: 6px; margin-left: auto;
+}
+.util-btn {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 4px 8px; border-radius: 6px; cursor: pointer;
+  font-family: inherit; font-size: 14px; line-height: 1;
+  transition: all 0.15s;
+}
+.util-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+/* ── Inline compare layout ─────────────────────────────────────────────────── */
+.main-col-left { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow-y: auto; align-items: center; }
+#compareRight {
+  flex: 1; min-width: 0; border-left: 1px solid #30363d;
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.main-panel.comparing { flex-direction: row; }
+.compare-right-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px 6px; gap: 8px; flex-shrink: 0;
+  border-bottom: 1px solid #30363d;
+}
+#compareScenarioRight {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 4px 10px; border-radius: 6px; font-family: inherit; font-size: 12px;
+  cursor: pointer; flex: 1; min-width: 0;
+}
+#compareScenarioRight:focus { border-color: #58a6ff; outline: none; }
+.compare-exit-btn { flex-shrink: 0; }
+.compare-right-content { padding: 14px; overflow-y: auto; flex: 1; font-size: 12px; }
+.compare-right-step-title { font-size: 13px; font-weight: 600; color: #c9d1d9; margin-bottom: 8px; }
+.compare-right-desc { color: #8b949e; line-height: 1.6; margin-bottom: 12px; }
+
 /* ── Feature J2: Animated particles ───────────────────────────────────────── */
 .arrow-particle {
   position: absolute; width: 6px; height: 6px; border-radius: 50%;
@@ -944,30 +990,22 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
 
 <!-- ── Toolbar ─────────────────────────────────────────────────────────────── -->
 <header class="app-header">
-  <div class="scenario-selector">
-    <button class="scenario-btn active" data-scenario="plain"    onclick="setScenario('plain')"><span data-i18n="sc_plain">1 · Plain Hash</span><span class="scenario-check">✓</span></button>
-    <button class="scenario-btn"        data-scenario="salted"   onclick="setScenario('salted')"><span data-i18n="sc_salted">2 · With Salt</span><span class="scenario-check">✓</span></button>
-    <button class="scenario-btn"        data-scenario="peppered" onclick="setScenario('peppered')"><span data-i18n="sc_peppered">3 · Salt + Pepper</span><span class="scenario-check">✓</span></button>
-    <button class="scenario-btn"        data-scenario="argon2"   onclick="setScenario('argon2')"><span data-i18n="sc_argon2">4 · Argon2id</span><span class="scenario-check">✓</span></button>
-  </div>
+  <span class="app-title">🔐 Login Security Visualized</span>
+  <span class="app-subtitle">plain hash → salt → pepper → Argon2id</span>
   <div class="toolbar-nav">
     <button class="nav-btn" id="btnPrev" aria-label="Previous step" onclick="prevStep()"><span data-i18n="prev">← Prev</span></button>
     <span class="step-counter" id="stepCounter">Step 1 of 7</span>
     <button class="nav-btn" id="btnNext" aria-label="Next step" onclick="nextStep()"><span data-i18n="next">Next →</span></button>
     <button class="nav-btn reset-btn" id="btnReset" aria-label="Reset to start" onclick="resetAll()"><span data-i18n="reset">↺ Reset</span></button>
-    <button class="nav-btn" id="btnCompare" aria-label="Compare scenarios" onclick="toggleCompare()">⊞ Compare</button>
-    <button class="nav-btn" id="btnSummary" aria-label="Summary table" onclick="toggleSummary()">≡ Summary</button>
-    <button class="nav-btn" id="btnDual" aria-label="Side-by-side view" onclick="toggleDual()">⧉ Dual</button>
-    <button class="nav-btn" id="btnCopyLink" aria-label="Copy link" onclick="copyLink()">⎘ Link</button>
+    <button class="nav-btn" id="btnPrint" aria-label="Print" onclick="window.print()">⎙</button>
+    <span id="progressCounter">0/4</span>
+  </div>
+  <div class="header-utils">
     <div class="share-wrap">
-      <button class="nav-btn" id="btnShare" aria-label="Share" onclick="toggleShareMenu()">↗ Share</button>
+      <button class="util-btn" id="btnShare" aria-label="Share" onclick="toggleShareMenu()">🔗</button>
       <div id="shareMenu"></div>
     </div>
-    <button class="nav-btn" id="btnExport" aria-label="Export as image" onclick="exportStep()">⤓ Export</button>
-    <button class="nav-btn" id="btnNarrate" aria-label="Read aloud" onclick="narrateStep()">🔊 Narrate</button>
-    <button class="nav-btn" id="btnPresent" aria-label="Presentation mode" onclick="togglePresent()">▶ Present</button>
-    <button class="nav-btn" id="btnTheme" aria-label="Toggle theme" onclick="toggleTheme()">☀ Theme</button>
-    <button class="nav-btn" id="btnPrint" aria-label="Print" onclick="window.print()">⎙ Print</button>
+    <button class="util-btn" id="btnTheme" aria-label="Toggle theme" onclick="toggleTheme()">☀</button>
     <select id="langSelector" aria-label="Language" onchange="setLanguage(this.value)">
       <option value="en">EN</option>
       <option value="zh-TW">繁中</option>
@@ -975,7 +1013,6 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
       <option value="fr">FR</option>
       <option value="ja">JA</option>
     </select>
-    <span id="progressCounter">0/4</span>
   </div>
   <button id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Menu">⋮</button>
 </header>
@@ -990,6 +1027,7 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
 
   <!-- CENTRE: Main panel (diagram + scrollable content) -->
   <div class="main-panel">
+    <div class="main-col-left">
 
     <!-- Nodes + arrows — compact, sticky top -->
     <div class="diagram-area">
@@ -1026,6 +1064,16 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
           </div>
           <div class="attacker-vline"></div>
         </div>
+      </div>
+      <!-- Scenario selector + compare control -->
+      <div class="scenario-bar">
+        <select id="scenarioSelect" onchange="setScenario(this.value)" aria-label="Scenario">
+          <option value="plain">1 · Plain Hash</option>
+          <option value="salted">2 · With Salt</option>
+          <option value="peppered">3 · Salt + Pepper</option>
+          <option value="argon2">4 · Argon2id</option>
+        </select>
+        <button class="nav-btn" id="btnCompare" aria-label="Compare scenarios" onclick="toggleCompare()">⊞ Compare</button>
       </div>
     </div>
 
@@ -1098,18 +1146,24 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
       <button id="btnQuiz" onclick="openQuiz()">🎯 Test your understanding</button>
 
     </div>
+    </div><!-- /.main-col-left -->
+
+    <!-- ── Inline compare right column ───────────────────────────────────── -->
+    <div id="compareRight" style="display:none">
+      <div class="compare-right-bar">
+        <select id="compareScenarioRight" onchange="renderCompareRight()" aria-label="Compare scenario">
+          <option value="plain">1 · Plain Hash</option>
+          <option value="salted" selected>2 · With Salt</option>
+          <option value="peppered">3 · Salt + Pepper</option>
+          <option value="argon2">4 · Argon2id</option>
+        </select>
+        <button class="nav-btn compare-exit-btn" id="btnNoCompare" onclick="toggleCompare()">✕ No Compare</button>
+      </div>
+      <div id="compareRightContent" class="compare-right-content"></div>
+    </div>
   </div>
 
 </main>
-
-<!-- ── Compare panel ──────────────────────────────────────────────────────── -->
-<div id="comparePanel">
-  <div class="compare-header">
-    <span class="compare-title">Scenario Comparison — Step <span id="compareStepLabel">1</span></span>
-    <button class="compare-close-btn" onclick="toggleCompare()">✕ Close (Esc)</button>
-  </div>
-  <div class="compare-grid" id="compareGrid"></div>
-</div>
 
 <!-- ── Shortcut overlay ───────────────────────────────────────────────────── -->
 <div id="shortcutOverlay">
@@ -1129,94 +1183,10 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
   </div>
 </div>
 
-<!-- ── Feature F: Summary panel ─────────────────────────────────────────── -->
-<div id="summaryPanel">
-  <div class="summary-header">
-    <span class="summary-title">Attack Surface by Scenario</span>
-    <button class="summary-close-btn" onclick="toggleSummary()">✕ Close (Esc)</button>
-  </div>
-  <table class="summary-table">
-    <thead><tr>
-      <th>Attack vector</th>
-      <th>Plain</th>
-      <th>Salted</th>
-      <th>Peppered</th>
-      <th>Argon2id</th>
-    </tr></thead>
-    <tbody>
-      <tr>
-        <td>Rainbow table</td>
-        <td class="summary-cell-yes">Instant crack</td>
-        <td class="summary-cell-no">Defeated</td>
-        <td class="summary-cell-no">Defeated</td>
-        <td class="summary-cell-no">Defeated</td>
-      </tr>
-      <tr>
-        <td>Brute force (GPU)</td>
-        <td class="summary-cell-yes">Seconds–hours</td>
-        <td class="summary-cell-yes">Seconds–hours</td>
-        <td class="summary-cell-partial">Needs pepper</td>
-        <td class="summary-cell-no">Centuries</td>
-      </tr>
-      <tr>
-        <td>Simultaneous exposure</td>
-        <td class="summary-cell-yes">All same-pw users fall</td>
-        <td class="summary-cell-no">Each hash unique</td>
-        <td class="summary-cell-no">Each hash unique</td>
-        <td class="summary-cell-no">Each hash unique</td>
-      </tr>
-      <tr>
-        <td>DB-only breach</td>
-        <td class="summary-cell-yes">Full exposure</td>
-        <td class="summary-cell-yes">Brute-forceable</td>
-        <td class="summary-cell-no">Missing pepper</td>
-        <td class="summary-cell-no">Infeasible cost</td>
-      </tr>
-      <tr>
-        <td>DB + app server breach</td>
-        <td class="summary-cell-yes">Full exposure</td>
-        <td class="summary-cell-yes">Brute-forceable</td>
-        <td class="summary-cell-yes">Crackable</td>
-        <td class="summary-cell-no">Still centuries</td>
-      </tr>
-    </tbody>
-  </table>
-  <p style="max-width:800px;margin:14px auto 0;font-size:10px;color:#8b949e">
-    Argon2id is the OWASP-recommended algorithm. Pepper adds a useful extra layer but is not a substitute for a memory-hard KDF.
-  </p>
-</div>
-
 <!-- ── Feature D: Quiz panel ─────────────────────────────────────────────── -->
 <div id="quizPanel">
   <div class="quiz-box">
     <!-- populated dynamically by openQuiz() -->
-  </div>
-</div>
-
-<!-- ── Feature E: Dual view panel ────────────────────────────────────────── -->
-<div id="dualPanel">
-  <div class="dual-header">
-    <span class="dual-title">Side-by-Side Comparison</span>
-    <button class="dual-close-btn" onclick="toggleDual()">✕ Close</button>
-  </div>
-  <div class="dual-selectors">
-    <select id="dualLeft" onchange="renderDual()">
-      <option value="plain">Plain</option>
-      <option value="salted">Salted</option>
-      <option value="peppered">Peppered</option>
-      <option value="argon2">Argon2id</option>
-    </select>
-    <span style="color:#8b949e">vs</span>
-    <select id="dualRight" onchange="renderDual()">
-      <option value="plain">Plain</option>
-      <option value="salted" selected>Salted</option>
-      <option value="peppered">Peppered</option>
-      <option value="argon2">Argon2id</option>
-    </select>
-  </div>
-  <div class="dual-grid" id="dualGrid">
-    <div class="dual-col" id="dualColLeft"></div>
-    <div class="dual-col" id="dualColRight"></div>
   </div>
 </div>
 
@@ -1258,10 +1228,8 @@ body.light-mode .step-tag.attack   { background: #ffe0dc; color: #cf222e; }
 <!-- ── Mobile menu ────────────────────────────────────────────────────── -->
 <div id="mobileMenu">
   <button class="mobile-menu-item" onclick="toggleCompare(); closeMobileMenu();">⊞ Compare</button>
-  <button class="mobile-menu-item" onclick="toggleSummary(); closeMobileMenu();">≡ Summary</button>
   <button class="mobile-menu-item" onclick="toggleTheme(); closeMobileMenu();">☀ Theme</button>
-  <button class="mobile-menu-item" onclick="toggleShareMenu(); closeMobileMenu();">↗ Share</button>
-  <button class="mobile-menu-item" onclick="narrateStep(); closeMobileMenu();">🔊 Narrate</button>
+  <button class="mobile-menu-item" onclick="toggleShareMenu(); closeMobileMenu();">🔗 Share</button>
   <button class="mobile-menu-item" onclick="exportStep(); closeMobileMenu();">⤓ Export</button>
 </div>
 
@@ -2315,8 +2283,8 @@ function render() {
   document.getElementById('stepCounter').textContent = t('step') + ' ' + (state.step + 1) + ' ' + t('of') + ' ' + totalSteps;
   document.getElementById('stepTag').textContent = t(s.tag);
 
-  // Feature E2: Update dual view if open
-  if (document.getElementById('dualPanel').classList.contains('visible')) renderDual();
+  // Update right compare column if open
+  if (document.body.classList.contains('comparing')) renderCompareRight();
 
   // Mobile nav update
   updateMobileNav();
@@ -2343,9 +2311,8 @@ function prevStep() { if (state.step > 0) { state.step--; render(); } }
 function resetAll() {
   state.step = 0;
   state.scenario = 'plain';
-  document.querySelectorAll('.scenario-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.scenario === 'plain')
-  );
+  const sel = document.getElementById('scenarioSelect');
+  if (sel) sel.value = 'plain';
   renderWizard();
   render();
 }
@@ -2353,54 +2320,52 @@ function resetAll() {
 function setScenario(sc) {
   state.scenario = sc;
   state.step = 0;
-  document.querySelectorAll('.scenario-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.scenario === sc)
-  );
+  const sel = document.getElementById('scenarioSelect');
+  if (sel) sel.value = sc;
   renderWizard();
   render();
+  if (document.body.classList.contains('comparing')) renderCompareRight();
 }
 
-// ── Compare mode ──────────────────────────────────────────────────────────────
+// ── Compare mode (inline) ─────────────────────────────────────────────────────
 function toggleCompare() {
-  const panel = document.getElementById('comparePanel');
-  const showing = panel.classList.toggle('visible');
-  if (showing) renderCompare();
+  const comparing = document.body.classList.toggle('comparing');
+  const right = document.getElementById('compareRight');
+  const panel = document.querySelector('.main-panel');
+  right.style.display = comparing ? '' : 'none';
+  if (comparing) {
+    panel.classList.add('comparing');
+    renderCompareRight();
+  } else {
+    panel.classList.remove('comparing');
+  }
 }
 
-function renderCompare() {
-  const stepIdx = state.step;
-  document.getElementById('compareStepLabel').textContent = stepIdx + 1;
-  const scenarios = [
-    { key:'plain',    label:'Plain',    cls:'' },
-    { key:'salted',   label:'Salted',   cls:'' },
-    { key:'peppered', label:'Peppered', cls:'' },
-    { key:'argon2',   label:'Argon2id', cls:'argon2' },
-  ];
-  const grid = document.getElementById('compareGrid');
-  grid.innerHTML = scenarios.map(sc => {
-    const steps = STEPS[sc.key];
-    const s = steps[Math.min(stepIdx, steps.length - 1)];
-    const hasSaltCol = sc.key !== 'plain';
-    let dbHtml = '';
-    if (s.db) {
-      dbHtml = '<table class="db-table" style="font-size:10px;width:100%"><thead><tr><th>user</th><th>hash</th>' +
-        (hasSaltCol ? '<th>salt</th>' : '') + '</tr></thead><tbody>' +
-        s.db.map(row =>
-          '<tr' + (row.breach ? ' class="mass-crack"' : '') + '>' +
-          '<td>' + row.username + '</td>' +
-          '<td class="' + (row.breach ? 'breach' : 'hash-val') + '" style="word-break:break-all;max-width:80px">' + row.hash + '</td>' +
-          (hasSaltCol ? '<td class="' + (row.breach ? 'breach' : 'salt-val') + '">' + (row.salt || '—') + '</td>' : '') +
-          '</tr>'
-        ).join('') + '</tbody></table>';
-    } else {
-      dbHtml = '<div class="db-empty">— empty —</div>';
-    }
-    return '<div class="compare-col">' +
-      '<div class="compare-col-title ' + sc.cls + '">' + sc.label + '</div>' +
-      '<div class="compare-col-desc">' + (s.title || '') + '</div>' +
-      dbHtml +
-      '</div>';
-  }).join('');
+function renderCompareRight() {
+  const sc = document.getElementById('compareScenarioRight').value;
+  const stepIdx = Math.min(state.step, STEPS[sc].length - 1);
+  const s = STEPS[sc][stepIdx];
+  const hasSaltCol = sc !== 'plain';
+  let html = '';
+  html += '<div class="compare-right-step-title">' + (s.title || '') + '</div>';
+  html += '<div class="compare-right-desc">' + (s.desc || '') + '</div>';
+  if (s.formula) html += renderFormula(s.formula);
+  if (s.db) {
+    html += '<div class="inline-section-title" style="margin-top:12px">Database</div>';
+    html += '<table class="db-table"><thead><tr><th>user</th><th>hash</th>' +
+      (hasSaltCol ? '<th>salt</th>' : '') + '</tr></thead><tbody>' +
+      s.db.map(row =>
+        '<tr' + (row.breach ? ' class="mass-crack"' : '') + '>' +
+        '<td>' + row.username + '</td>' +
+        '<td class="' + (row.breach ? 'breach' : 'hash-val') + '" style="word-break:break-all">' + row.hash + '</td>' +
+        (hasSaltCol ? '<td class="' + (row.breach ? 'breach' : 'salt-val') + '">' + (row.salt || '—') + '</td>' : '') +
+        '</tr>'
+      ).join('') + '</tbody></table>';
+  }
+  if (s.attack) {
+    html += '<div class="attack-outcome ' + s.attack.level + '" style="margin-top:10px">' + s.attack.text + '</div>';
+  }
+  document.getElementById('compareRightContent').innerHTML = html;
 }
 
 // ── Shortcut overlay ──────────────────────────────────────────────────────────
@@ -2411,26 +2376,20 @@ function toggleShortcuts() {
 // ── Keydown ────────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   // Don't fire shortcuts when typing in an input, or when a modifier key is held
-  if (e.target.tagName === 'INPUT') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-  const compareVisible   = document.getElementById('comparePanel').classList.contains('visible');
+  const comparing        = document.body.classList.contains('comparing');
   const shortcutVisible  = document.getElementById('shortcutOverlay').classList.contains('visible');
-  const summaryVisible   = document.getElementById('summaryPanel').classList.contains('visible');
-  const presenting       = document.body.classList.contains('presenting');
 
   if (e.key === 'Escape') {
     if (shortcutVisible) { document.getElementById('shortcutOverlay').classList.remove('visible'); return; }
-    if (compareVisible)  { document.getElementById('comparePanel').classList.remove('visible'); return; }
-    if (summaryVisible)  { document.getElementById('summaryPanel').classList.remove('visible'); return; }
-    if (presenting)      { stopPresent(); return; }
+    if (comparing)       { toggleCompare(); return; }
   }
   if (e.key === '?') { toggleShortcuts(); return; }
   if (e.key === 'c' || e.key === 'C') { toggleCompare(); return; }
-  if (e.key === 's' || e.key === 'S') { toggleSummary(); return; }
-  if (e.key === 'p' || e.key === 'P') { togglePresent(); return; }
 
-  if (compareVisible || shortcutVisible || summaryVisible) return; // don't navigate while overlay open
+  if (comparing || shortcutVisible) return; // don't navigate while overlay open
 
   if (e.key === 'ArrowRight') nextStep();
   if (e.key === 'ArrowLeft')  prevStep();
@@ -2440,11 +2399,6 @@ document.addEventListener('keydown', e => {
   if (e.key === '4') setScenario('argon2');
   if (e.key === 'r' || e.key === 'R') resetAll();
 });
-
-// ── Feature F: Summary panel ──────────────────────────────────────────────────
-function toggleSummary() {
-  document.getElementById('summaryPanel').classList.toggle('visible');
-}
 
 // ── Feature G: Copy link ──────────────────────────────────────────────────────
 function copyLink() {
@@ -2651,6 +2605,13 @@ function setLanguage(lang) {
     if (I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
     else if (I18N.en[key]) el.textContent = I18N.en[key];
   });
+  // Update scenario dropdown options
+  const scSel = document.getElementById('scenarioSelect');
+  if (scSel) {
+    ['plain','salted','peppered','argon2'].forEach((sc, i) => {
+      scSel.options[i].textContent = t('sc_' + sc);
+    });
+  }
   // Re-render step counter
   const totalSteps = STEPS[state.scenario].length;
   document.getElementById('stepCounter').textContent = t('step') + ' ' + (state.step + 1) + ' ' + t('of') + ' ' + totalSteps;
@@ -2774,8 +2735,7 @@ function updateProgress() {
     const seen = visited[sc] ? Object.keys(visited[sc]).length : 0;
     const done = seen >= total;
     if (done) completed++;
-    const btn = document.querySelector('[data-scenario="' + sc + '"] .scenario-check');
-    if (btn) btn.classList.toggle('visible', done);
+    // (scenario-check badges removed — progress tracked by counter only)
   });
   document.getElementById('progressCounter').textContent = completed + '/4';
 }
@@ -2812,28 +2772,6 @@ document.getElementById('tourNext').addEventListener('click', () => {
 });
 
 // ── Feature E: Dual view ──────────────────────────────────────────────────────
-function toggleDual() {
-  const panel = document.getElementById('dualPanel');
-  panel.classList.toggle('visible');
-  if (panel.classList.contains('visible')) renderDual();
-}
-function renderDual() {
-  const leftSc = document.getElementById('dualLeft').value;
-  const rightSc = document.getElementById('dualRight').value;
-  const step = Math.min(state.step, STEPS[leftSc].length - 1, STEPS[rightSc].length - 1);
-  renderDualCol('dualColLeft', leftSc, step);
-  renderDualCol('dualColRight', rightSc, step);
-}
-function renderDualCol(colId, sc, stepIdx) {
-  const s = STEPS[sc][stepIdx];
-  const col = document.getElementById(colId);
-  let html = '<div class="dual-col-title">' + sc + ' — ' + s.title + '</div>';
-  html += '<div style="font-size:11px;color:#c9d1d9;margin-bottom:8px">' + (s.desc || '') + '</div>';
-  if (s.formula) html += renderFormula(s.formula);
-  if (s.attack) html += '<div class="attack-outcome ' + s.attack.level + '" style="margin-top:8px;font-size:10px">' + s.attack.text + '</div>';
-  col.innerHTML = html;
-}
-
 // ── Feature I: Export / Share ─────────────────────────────────────────────────
 function exportStep() {
   const el = document.querySelector('.main-panel');
@@ -2863,23 +2801,14 @@ function exportStep() {
 
 function toggleShareMenu() {
   const menu = document.getElementById('shareMenu');
-  const url = encodeURIComponent(location.origin + location.pathname + '#' + state.scenario + '/' + state.step);
+  const rawUrl = location.origin + location.pathname + '#' + state.scenario + '/' + state.step;
+  const url = encodeURIComponent(rawUrl);
   const text = encodeURIComponent('Login Security Visualized — ' + state.scenario + ' step ' + (state.step + 1));
   menu.innerHTML =
+    '<a href="#" onclick="event.preventDefault();navigator.clipboard.writeText(\'' + rawUrl.replace(/'/g, "\\'") + '\');document.getElementById(\'shareMenu\').classList.remove(\'visible\')">Copy link</a>' +
     '<a href="https://wa.me/?text=' + text + '%20' + url + '" target="_blank" rel="noopener">WhatsApp</a>' +
     '<a href="https://t.me/share/url?url=' + url + '&text=' + text + '" target="_blank" rel="noopener">Telegram</a>';
   menu.classList.toggle('visible');
-}
-
-// ── Feature K: Step narration ─────────────────────────────────────────────────
-function narrateStep() {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const s = STEPS[state.scenario][state.step];
-  const text = (s.desc || '').replace(/<[^>]+>/g, '');
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 0.9;
-  window.speechSynthesis.speak(utter);
 }
 
 // ── Feature D: zxcvbn-lite password strength ──────────────────────────────────
@@ -2955,9 +2884,8 @@ function saveState() {
   const stp = parseInt(parts[1], 10);
   if (STEPS[sc]) {
     state.scenario = sc;
-    document.querySelectorAll('.scenario-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.scenario === sc)
-    );
+    const sel = document.getElementById('scenarioSelect');
+    if (sel) sel.value = sc;
   }
   if (!isNaN(stp) && stp >= 0 && stp < STEPS[state.scenario].length) {
     state.step = stp;
@@ -2995,9 +2923,8 @@ function doResume() {
   if (d && STEPS[d.sc]) {
     state.scenario = d.sc;
     state.step = Math.min(d.step, STEPS[d.sc].length - 1);
-    document.querySelectorAll('.scenario-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.scenario === d.sc)
-    );
+    const sel = document.getElementById('scenarioSelect');
+    if (sel) sel.value = d.sc;
     renderWizard();
     render();
   }

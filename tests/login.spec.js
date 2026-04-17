@@ -64,23 +64,15 @@ test('shows subtitle', async ({ page }) => {
 });
 
 // ── Scenario selector ────────────────────────────────────────────────────────
-test('three scenario buttons present', async ({ page }) => {
+test('plain scenario selected by default in dropdown', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-scenario="plain"]')).toBeVisible();
-  await expect(page.locator('[data-scenario="salted"]')).toBeVisible();
-  await expect(page.locator('[data-scenario="peppered"]')).toBeVisible();
-});
-
-test('plain scenario active by default', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
-  await expect(page.locator('[data-scenario="salted"]')).not.toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('plain');
 });
 
 test('switching scenario resets to step 1', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnNext');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await expect(page.locator('#stepCounter')).toContainText('Step 1 of 7');
 });
 
@@ -153,33 +145,32 @@ test('arrow key left goes back', async ({ page }) => {
   await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
 });
 
-test('keyboard 1/2/3 switches scenarios', async ({ page }) => {
+test('keyboard 1/2/3 switches scenarios via dropdown', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('2');
-  await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('salted');
   await page.keyboard.press('3');
-  await expect(page.locator('[data-scenario="peppered"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('peppered');
   await page.keyboard.press('1');
-  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('plain');
 });
 
 test('reset button resets to step 1 plain', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   for (let i = 0; i < 3; i++) await page.click('#btnNext');
   await page.click('#btnReset');
   await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
-  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
-  await expect(page.locator('[data-scenario="peppered"]')).not.toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('plain');
 });
 
 test('keyboard r resets to step 1 plain', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('#btnNext');
   await page.keyboard.press('r');
   await expect(page.locator('#stepCounter')).toContainText('Step 1 of 8');
-  await expect(page.locator('[data-scenario="plain"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('plain');
 });
 
 // ── Step content ─────────────────────────────────────────────────────────────
@@ -213,14 +204,14 @@ test('password chip appears on step 1', async ({ page }) => {
 
 test('salt chip appears in salted scenario step 2', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="1"]');
   await expect(page.locator('#chips-1 .ws-chip-salt')).toBeVisible();
 });
 
 test('pepper chip appears in peppered scenario step 2', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="1"]');
   await expect(page.locator('#chips-1 .ws-chip-pepper')).toBeVisible();
 });
@@ -241,7 +232,7 @@ test('database table appears after store step (plain)', async ({ page }) => {
 
 test('salted scenario DB shows salt column', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="2"]');
   await expect(page.locator('.db-table th')).toContainText(['username', 'hash', 'salt']);
 });
@@ -261,7 +252,7 @@ test('computation panel shows content', async ({ page }) => {
 
 test('computation shows pepper in peppered scenario step 2', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="1"]');
   await expect(page.locator('#computationRows')).toContainText('pepper');
 });
@@ -287,21 +278,21 @@ test('formula shows hash block on hash step', async ({ page }) => {
 
 test('formula shows salt block in salted scenario hash step', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="1"]');
   await expect(page.locator('.formula-block.salt')).toBeVisible();
 });
 
 test('formula shows pepper block in peppered scenario hash step', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="1"]');
   await expect(page.locator('.formula-block.pepper')).toBeVisible();
 });
 
 test('formula shows missing pepper block on peppered attack step', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="6"]');
   await expect(page.locator('.formula-block.missing')).toBeVisible();
 });
@@ -332,14 +323,14 @@ test('plain scenario attack shows .fail outcome', async ({ page }) => {
 
 test('salted scenario attack shows .partial outcome', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   for (let i = 0; i < 6; i++) await page.click('#btnNext');
   await expect(page.locator('.attack-outcome.partial')).toBeVisible();
 });
 
 test('peppered scenario attack shows .partial (DB-only breach blocked, but combined breach possible)', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   for (let i = 0; i < 6; i++) await page.click('#btnNext');
   await expect(page.locator('.attack-outcome.partial')).toBeVisible();
 });
@@ -389,7 +380,7 @@ test('DB shows 3 users after store step (plain)', async ({ page }) => {
 
 test('DB shows 3 users after store step (salted)', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="2"]');
   await expect(page.locator('.db-table tbody tr')).toHaveCount(3);
 });
@@ -404,7 +395,7 @@ test('plain DB: alice and bob share the same hash', async ({ page }) => {
 
 test('salted DB: alice and bob have different hashes despite same password', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="2"]');
   const hashes = await page.locator('.db-table td.hash-val').allTextContents();
   expect(hashes[0]).not.toBe(hashes[1]); // alice ≠ bob despite same password
@@ -458,22 +449,22 @@ test('plain crack bar shows instant difficulty (rainbow table step)', async ({ p
 
 test('peppered crack bar shows blocked', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="6"]');
   await expect(page.locator('#crackBarSection')).toContainText('blocked');
 });
 
 // ── Cmd/Ctrl modifier keys bypass single-key shortcuts ───────────────────────
-test('Cmd+C does not toggle compare panel', async ({ page }) => {
+test('Cmd+C does not toggle compare mode', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Meta+c');
-  await expect(page.locator('#comparePanel')).toBeHidden();
+  await expect(page.locator('#compareRight')).not.toBeVisible();
 });
 
-test('Ctrl+C does not toggle compare panel', async ({ page }) => {
+test('Ctrl+C does not toggle compare mode', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Control+c');
-  await expect(page.locator('#comparePanel')).toBeHidden();
+  await expect(page.locator('#compareRight')).not.toBeVisible();
 });
 
 // ── Plain scenario has 8 steps (attack split into two) ───────────────────────
@@ -484,7 +475,7 @@ test('plain scenario step counter shows 8 steps', async ({ page }) => {
 
 test('non-plain scenarios still have 7 steps', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await expect(page.locator('#stepCounter')).toContainText('of 7');
 });
 
@@ -530,7 +521,7 @@ test('all 8 plain steps render without error', async ({ page }) => {
 for (const scenario of ['salted', 'peppered']) {
   test(`all 7 steps render without error — ${scenario}`, async ({ page }) => {
     await page.goto('/');
-    await page.click(`[data-scenario="${scenario}"]`);
+    await page.selectOption('#scenarioSelect', scenario);
     for (let i = 0; i < 7; i++) {
       await page.click(`[data-step="${i}"]`);
       await expect(page.locator('#stepText')).not.toBeEmpty();
@@ -540,33 +531,33 @@ for (const scenario of ['salted', 'peppered']) {
 }
 
 // ── Feature 1: Argon2id scenario ─────────────────────────────────────────────
-test('argon2 scenario button is present', async ({ page }) => {
+test('argon2 scenario is available in dropdown', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-scenario="argon2"]')).toBeVisible();
+  await expect(page.locator('#scenarioSelect option[value="argon2"]')).toHaveCount(1);
 });
 
 test('keyboard 4 switches to argon2 scenario', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('4');
-  await expect(page.locator('[data-scenario="argon2"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('argon2');
 });
 
 test('argon2 scenario shows Argon2id in computation', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await expect(page.locator('#computationRows')).toContainText('Argon2id');
 });
 
 test('argon2 attack step crack bar shows centuries', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await expect(page.locator('#crackBarSection')).toContainText('centuries');
 });
 
 test('all 7 steps render without error — argon2', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   for (let i = 0; i < 7; i++) {
     await page.click(`[data-step="${i}"]`);
     await expect(page.locator('#stepText')).not.toBeEmpty();
@@ -580,40 +571,31 @@ test('compare button is present', async ({ page }) => {
   await expect(page.locator('#btnCompare')).toBeVisible();
 });
 
-test('compare panel is hidden by default', async ({ page }) => {
+test('compare right column is hidden by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#comparePanel')).toBeHidden();
+  await expect(page.locator('#compareRight')).not.toBeVisible();
 });
 
-test('clicking compare button shows compare panel', async ({ page }) => {
-  await page.goto('/');
-  await page.click('#btnCompare');
-  await expect(page.locator('#comparePanel')).toBeVisible();
-});
-
-test('compare panel shows all scenario labels', async ({ page }) => {
+test('clicking compare button shows inline right column', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnCompare');
-  await expect(page.locator('#comparePanel')).toContainText('Plain');
-  await expect(page.locator('#comparePanel')).toContainText('Salted');
-  await expect(page.locator('#comparePanel')).toContainText('Peppered');
-  await expect(page.locator('#comparePanel')).toContainText('Argon2id');
+  await expect(page.locator('#compareRight')).toBeVisible();
 });
 
-test('keyboard c toggles compare panel', async ({ page }) => {
+test('keyboard c toggles inline compare', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('c');
-  await expect(page.locator('#comparePanel')).toBeVisible();
+  await expect(page.locator('#compareRight')).toBeVisible();
   await page.keyboard.press('c');
-  await expect(page.locator('#comparePanel')).toBeHidden();
+  await expect(page.locator('#compareRight')).not.toBeVisible();
 });
 
-test('Escape closes compare panel', async ({ page }) => {
+test('Escape closes inline compare', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnCompare');
-  await expect(page.locator('#comparePanel')).toBeVisible();
+  await expect(page.locator('#compareRight')).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.locator('#comparePanel')).toBeHidden();
+  await expect(page.locator('#compareRight')).not.toBeVisible();
 });
 
 // ── Feature 3: Keyboard shortcut overlay ─────────────────────────────────────
@@ -659,13 +641,13 @@ test('URL hash updates on step change', async ({ page }) => {
 
 test('URL hash updates on scenario change', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await expect(page).toHaveURL(/#salted\/0/);
 });
 
 test('loading with hash navigates to correct scenario and step', async ({ page }) => {
   await page.goto('/#salted/3');
-  await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('salted');
   await expect(page.locator('#stepCounter')).toContainText('Step 4');
 });
 
@@ -722,7 +704,7 @@ test('thinkWhy block content changes between scenarios', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-step="6"]');
   const plain = await page.locator('#thinkWhy').textContent();
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="6"]');
   const peppered = await page.locator('#thinkWhy').textContent();
   expect(plain).not.toEqual(peppered);
@@ -737,7 +719,7 @@ test('success box is hidden on non-login steps', async ({ page }) => {
 
 test('success box is visible on login confirmed step', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="4"]');
   await expect(page.locator('#successBox')).toHaveClass(/visible/);
 });
@@ -770,18 +752,18 @@ test('refs section visible and contains link when step has refs', async ({ page 
   await expect(page.locator('#refsList .ref-link').first()).toBeVisible();
 });
 
-// ── Coverage: compare grid DB content ────────────────────────────────────────
-test('compare grid shows DB tables at step 3 (store step)', async ({ page }) => {
+// ── Coverage: compare right col DB content ───────────────────────────────────
+test('compare right column shows DB content at step 3 (store step)', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-step="2"]');
   await page.click('#btnCompare');
-  await expect(page.locator('#compareGrid')).toContainText('alice');
+  await expect(page.locator('#compareRightContent')).toContainText('alice');
 });
 
 // ── Coverage: permalink argon2 deep-link ─────────────────────────────────────
 test('loading /#argon2/6 shows argon2 attack step', async ({ page }) => {
   await page.goto('/#argon2/6');
-  await expect(page.locator('[data-scenario="argon2"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('argon2');
   await expect(page.locator('#stepTag')).toContainText('ATTACK');
 });
 
@@ -820,14 +802,14 @@ test('breach callout is hidden on non-attack steps', async ({ page }) => {
 // ── Feature B: Password strength interplay (Argon2id attack step) ────────────
 test('argon2 attack step shows strength demo input', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await expect(page.locator('#strengthDemoWrap')).toBeVisible();
 });
 
 test('typing a weak password into strength demo shows fast crack estimate', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await page.fill('#strengthInput', '123');
   const result = await page.locator('#strengthResult').textContent();
@@ -836,7 +818,7 @@ test('typing a weak password into strength demo shows fast crack estimate', asyn
 
 test('typing a strong password into strength demo shows slow crack estimate', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await page.fill('#strengthInput', 'correct-horse-battery-staple-42!');
   const result = await page.locator('#strengthResult').textContent();
@@ -846,9 +828,9 @@ test('typing a strong password into strength demo shows slow crack estimate', as
 // ── Feature C: Scenario delta highlight ──────────────────────────────────────
 test('switching to salted adds delta-new class to salt formula blocks', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="plain"]');
+  await page.selectOption('#scenarioSelect', 'plain');
   await page.click('[data-step="1"]');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   // salt block should briefly have delta-new class
   await expect(page.locator('.formula-block.salt.delta-new').first()).toBeVisible();
 });
@@ -918,94 +900,23 @@ test('breach counter starts at 0 and reaches target', async ({ page }) => {
   }, { timeout: 5000 }).toBeGreaterThan(0);
 });
 
-// ── Feature F: Cross-scenario summary table ───────────────────────────────────
-test('summary button is visible in toolbar', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#btnSummary')).toBeVisible();
-});
-
-test('summary panel is hidden by default', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#summaryPanel')).toBeHidden();
-});
-
-test('clicking summary button shows summary panel', async ({ page }) => {
-  await page.goto('/');
-  await page.click('#btnSummary');
-  await expect(page.locator('#summaryPanel')).toBeVisible();
-});
-
-test('summary panel shows all 4 scenarios as columns', async ({ page }) => {
-  await page.goto('/');
-  await page.click('#btnSummary');
-  await expect(page.locator('#summaryPanel')).toContainText('Plain');
-  await expect(page.locator('#summaryPanel')).toContainText('Salted');
-  await expect(page.locator('#summaryPanel')).toContainText('Peppered');
-  await expect(page.locator('#summaryPanel')).toContainText('Argon2id');
-});
-
-test('summary panel shows attack vector rows', async ({ page }) => {
-  await page.goto('/');
-  await page.click('#btnSummary');
-  await expect(page.locator('#summaryPanel')).toContainText(/rainbow|brute force/i);
-});
-
-test('keyboard s toggles summary panel', async ({ page }) => {
-  await page.goto('/');
-  await page.keyboard.press('s');
-  await expect(page.locator('#summaryPanel')).toBeVisible();
-  await page.keyboard.press('s');
-  await expect(page.locator('#summaryPanel')).toBeHidden();
-});
-
-test('Escape closes summary panel', async ({ page }) => {
-  await page.goto('/');
-  await page.click('#btnSummary');
-  await page.keyboard.press('Escape');
-  await expect(page.locator('#summaryPanel')).toBeHidden();
-});
-
-// ── Feature G: Copy-link button ───────────────────────────────────────────────
-test('copy-link button is visible', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#btnCopyLink')).toBeVisible();
-});
-
-test('clicking copy-link copies current permalink to clipboard', async ({ page }) => {
+// ── Feature G: Share copy-link ────────────────────────────────────────────────
+test('clicking share copy-link option copies permalink', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-step="2"]');
   let copied = '';
   await page.exposeFunction('__captureClipboard', (t) => { copied = t; });
   await page.evaluate(() => { navigator.clipboard.writeText = (t) => window.__captureClipboard(t); });
-  await page.click('#btnCopyLink');
+  await page.click('#btnShare');
+  await page.click('#shareMenu a:first-child');
   await expect.poll(() => copied).toContain('#plain/2');
-});
-
-// ── Feature H: Presentation mode ─────────────────────────────────────────────
-test('present button is visible', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#btnPresent')).toBeVisible();
-});
-
-test('keyboard p starts presentation mode and adds class to body', async ({ page }) => {
-  await page.goto('/');
-  await page.keyboard.press('p');
-  await expect(page.locator('body')).toHaveClass(/presenting/);
-});
-
-test('pressing Escape stops presentation mode', async ({ page }) => {
-  await page.goto('/');
-  await page.keyboard.press('p');
-  await expect(page.locator('body')).toHaveClass(/presenting/);
-  await page.keyboard.press('Escape');
-  await expect(page.locator('body')).not.toHaveClass(/presenting/);
 });
 
 test('presentation mode auto-advances to next step', async ({ page }) => {
   await page.goto('/');
   // speed up timer for testing via page injection
   await page.evaluate(() => { window.__PRESENT_INTERVAL_MS = 200; });
-  await page.keyboard.press('p');
+  await page.evaluate(() => { togglePresent(); });
   await expect.poll(async () => {
     return page.locator('#stepCounter').textContent();
   }, { timeout: 3000 }).toContain('Step 2');
@@ -1098,28 +1009,28 @@ test('page registers a service worker on load', async ({ page }) => {
 // ── Feature A: Quiz on all 4 scenarios ──────────────────────────────────────
 test('quiz button visible on last attack step of salted', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="6"]');
   await expect(page.locator('#btnQuiz')).toBeVisible();
 });
 
 test('quiz button visible on last attack step of peppered', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="6"]');
   await expect(page.locator('#btnQuiz')).toBeVisible();
 });
 
 test('quiz button visible on last attack step of argon2', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await expect(page.locator('#btnQuiz')).toBeVisible();
 });
 
 test('salted quiz has scenario-specific question about salt', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="6"]');
   await page.click('#btnQuiz');
   await expect(page.locator('#quizPanel')).toContainText(/salt/i);
@@ -1127,23 +1038,23 @@ test('salted quiz has scenario-specific question about salt', async ({ page }) =
 
 test('argon2 quiz has scenario-specific question about memory', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await page.click('#btnQuiz');
   await expect(page.locator('#quizPanel')).toContainText(/memory|RAM|Argon2/i);
 });
 
 // ── Feature B: Scenario progress tracker ────────────────────────────────────
-test('scenario tab shows completion check after visiting all steps', async ({ page }) => {
+test('progress counter shows 0 on fresh start', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#progressCounter')).toContainText('0');
+});
+
+test('progress counter increments after completing a scenario', async ({ page }) => {
   await page.goto('/');
   // visit all 8 plain steps
   for (let i = 0; i < 8; i++) await page.click(`[data-step="${i}"]`);
-  await expect(page.locator('[data-scenario="plain"] .scenario-check')).toBeVisible();
-});
-
-test('progress counter shows completed count', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#progressCounter')).toContainText('0');
+  await expect(page.locator('#progressCounter')).toContainText('1');
 });
 
 test('completion state persists across page reload', async ({ page }) => {
@@ -1151,7 +1062,8 @@ test('completion state persists across page reload', async ({ page }) => {
   for (let i = 0; i < 8; i++) await page.click(`[data-step="${i}"]`);
   await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
   await page.goto('/');
-  await expect(page.locator('[data-scenario="plain"] .scenario-check')).toBeVisible();
+  // progress counter still shows 1 after reload
+  await expect(page.locator('#progressCounter')).toContainText('1');
 });
 
 // ── Feature C: Guided tour ──────────────────────────────────────────────────
@@ -1184,7 +1096,7 @@ test('tour does not appear on return visit', async ({ page }) => {
 // ── Feature D: zxcvbn-lite password strength ────────────────────────────────
 test('strength demo shows pattern feedback for dictionary word', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await page.fill('#strengthInput', 'password');
   await expect(page.locator('#strengthResult')).toContainText(/common|dictionary/i);
@@ -1192,7 +1104,7 @@ test('strength demo shows pattern feedback for dictionary word', async ({ page }
 
 test('strength demo identifies keyboard pattern', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await page.fill('#strengthInput', 'qwerty123');
   await expect(page.locator('#strengthResult')).toContainText(/keyboard|pattern|common/i);
@@ -1200,29 +1112,24 @@ test('strength demo identifies keyboard pattern', async ({ page }) => {
 
 test('strength demo shows strong result for complex password', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="argon2"]');
+  await page.selectOption('#scenarioSelect', 'argon2');
   await page.click('[data-step="6"]');
   await page.fill('#strengthInput', 'j#9Kx!mP2vR$wL7q');
   await expect(page.locator('#strengthResult')).toContainText(/centuries|decades|years/i);
 });
 
-// ── Feature E: Side-by-side dual view ───────────────────────────────────────
-test('dual view button visible in toolbar', async ({ page }) => {
+// ── Feature E: Inline compare (replaced dual view) ───────────────────────────
+test('compare right column has scenario dropdown', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#btnDual')).toBeVisible();
+  await page.click('#btnCompare');
+  await expect(page.locator('#compareScenarioRight')).toBeVisible();
 });
 
-test('clicking dual view opens split panel with two scenario selectors', async ({ page }) => {
+test('compare right column shows content after enabling compare', async ({ page }) => {
   await page.goto('/');
-  await page.click('#btnDual');
-  await expect(page.locator('#dualPanel')).toBeVisible();
-  await expect(page.locator('#dualPanel select').first()).toBeVisible();
-});
-
-test('dual view shows data for both selected scenarios', async ({ page }) => {
-  await page.goto('/');
-  await page.click('#btnDual');
-  await expect(page.locator('#dualPanel .dual-col')).toHaveCount(2);
+  await page.click('[data-step="2"]');
+  await page.click('#btnCompare');
+  await expect(page.locator('#compareRightContent')).not.toBeEmpty();
 });
 
 // ── Feature F: ARIA landmarks & accessibility ───────────────────────────────
@@ -1306,10 +1213,10 @@ test('language preference persists across reload', async ({ page }) => {
   expect(text).toMatch(/ステップ/);
 });
 
-test('switching to zh-TW changes scenario button text', async ({ page }) => {
+test('switching to zh-TW changes scenario dropdown option text', async ({ page }) => {
   await page.goto('/');
   await page.selectOption('#langSelector', 'zh-TW');
-  await expect(page.locator('[data-scenario="plain"]')).toContainText(/純雜湊/);
+  await expect(page.locator('#scenarioSelect option[value="plain"]')).toContainText(/純雜湊/);
 });
 
 test('switching to fr changes toolbar button text', async ({ page }) => {
@@ -1330,19 +1237,19 @@ test('theme preference persists across reload', async ({ page }) => {
 
 test('last scenario+step persists across reload', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="salted"]');
+  await page.selectOption('#scenarioSelect', 'salted');
   await page.click('[data-step="3"]');
   await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
   await page.goto('/');
   // Resume prompt appears — click to restore
   await page.click('#resumeYes');
   await expect(page.locator('#stepCounter')).toContainText('4');
-  await expect(page.locator('[data-scenario="salted"]')).toHaveClass(/active/);
+  await expect(page.locator('#scenarioSelect')).toHaveValue('salted');
 });
 
 test('resume prompt appears on return to unfinished session', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="4"]');
   await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
   await page.goto('/');
@@ -1351,7 +1258,7 @@ test('resume prompt appears on return to unfinished session', async ({ page }) =
 
 test('clicking resume restores last position', async ({ page }) => {
   await page.goto('/');
-  await page.click('[data-scenario="peppered"]');
+  await page.selectOption('#scenarioSelect', 'peppered');
   await page.click('[data-step="4"]');
   await page.evaluate(async () => { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) await r.unregister(); });
   await page.goto('/');
@@ -1360,28 +1267,24 @@ test('clicking resume restores last position', async ({ page }) => {
 });
 
 // ── Feature I: Export / Share ────────────────────────────────────────────────
-test('export button is visible in toolbar', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#btnExport')).toBeVisible();
-});
-
-test('share button is visible in toolbar', async ({ page }) => {
+test('share button is visible', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#btnShare')).toBeVisible();
 });
 
-test('clicking share opens share menu with links', async ({ page }) => {
+test('clicking share opens share menu with copy link + social links', async ({ page }) => {
   await page.goto('/');
   await page.click('#btnShare');
   await expect(page.locator('#shareMenu')).toBeVisible();
-  await expect(page.locator('#shareMenu a')).toHaveCount(2); // WhatsApp + Telegram
+  await expect(page.locator('#shareMenu a')).toHaveCount(3); // Copy link + WhatsApp + Telegram
 });
 
 test('share links contain current permalink', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-step="3"]');
   await page.click('#btnShare');
-  const href = await page.locator('#shareMenu a').first().getAttribute('href');
+  // skip first link (copy link), check social links
+  const href = await page.locator('#shareMenu a').nth(1).getAttribute('href');
   expect(href).toMatch(/plain(%2F|\/)3/);
 });
 
@@ -1399,22 +1302,6 @@ test('particle not visible when arrow is inactive', async ({ page }) => {
   await expect(sdParticle).toHaveCount(0);
 });
 
-// ── Feature K: Step narration ───────────────────────────────────────────────
-test('narrate button is visible in toolbar', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('#btnNarrate')).toBeVisible();
-});
-
-test('clicking narrate calls speechSynthesis.speak', async ({ page }) => {
-  await page.goto('/');
-  let spoken = false;
-  await page.evaluate(() => {
-    window.speechSynthesis.speak = () => { window.__speechCalled = true; };
-  });
-  await page.click('#btnNarrate');
-  const called = await page.evaluate(() => window.__speechCalled);
-  expect(called).toBe(true);
-});
 
 // ── Feature M: PWA manifest + favicon ───────────────────────────────────────
 test('manifest.json is served', async ({ page }) => {
